@@ -1,0 +1,14 @@
+scrape_configs:
+  - job_name: keycloak
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['${KEYCLOAK_HOSTNAME}:${KEYCLOAK_PORT}']
+  - job_name: prometheus
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['localhost:${PROMETHEUS_PORT}']
+
+global:
+  scrape_interval: 18s
+  scrape_timeout: 15s
+  evaluation_interval: 18s

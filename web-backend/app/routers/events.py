@@ -1,0 +1,45 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.db import get_db
+from app.database.models import Event
+from app.database.repository import ModelRepository
+from app.routers.auth import get_current_user
+from app.schemas.events import EventCreateSchema, EventFetchSchema
+
+router = APIRouter()
+
+@router.post("/create", response_model=EventCreateSchema)
+async def create_event(
+    event: EventCreateSchema,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Event creation for authenticated user
+
+    :param EventCreateSchema event: Event for creation
+    :param dict user: Current user instance
+    :param AsyncSession db: Current database session
+    """
+    repository_events = ModelRepository(session=db, model=Event)
+    event_finding_result = await repository_events.fetch_by_filters(name=event.name)
+    if event_finding_result:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Event already exists in system",
+        )
+    event.client_info = user["azp"]
+    return await repository_events.create(obj=event)
+
+
+@router.get("", response_model=list[EventFetchSchema])
+async def fetch_events(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db),):
+    """
+    Events for current user fetching
+
+    :param dict user: Current user instance
+    :param AsyncSession db: Current database session
+    """
+    repository_events = ModelRepository(session=db, model=Event)
+    return await repository_events.fetch_by_filters(filters={"client_info": user["azp"]})

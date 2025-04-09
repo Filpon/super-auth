@@ -1,0 +1,6 @@
+{
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/plugin-transform-private-property-in-object": "^7.25.9"
+  }
+}
