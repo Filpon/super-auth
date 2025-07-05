@@ -28,6 +28,9 @@ KC_PORT = os.getenv("KC_PORT")
 KC_REALM_NAME = os.getenv("KC_REALM_NAME")
 KC_CLIENT_SECRET_KEY = os.getenv("KC_CLIENT_SECRET_KEY")
 KC_CLIENT_ID = os.getenv("KC_CLIENT_ID")
+KC_REALM_COMMON_CLIENT = os.getenv("KC_REALM_COMMON_CLIENT")
+KC_REALM_COMMON_USER = os.getenv("KC_REALM_COMMON_USER")
+KC_REALM_COMMON_USER_PASSWORD = os.getenv("KC_REALM_COMMON_USER_PASSWORD")
 KEYCLOAK_ADMIN = os.getenv("KEYCLOAK_ADMIN")
 KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD")
 REACT_APP_BACKEND_URL = os.getenv("REACT_APP_BACKEND_URL")
@@ -40,23 +43,22 @@ KEYCLOAK_CONTAINER_BASE_URL = f"{KEYCLOAK_CONTAINER_URL}/auth/realms/{KC_REALM_N
 
 REDIRECT_URI = f"{KEYCLOAK_CONTAINER_URL}/callback"
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{REACT_APP_BACKEND_URL}{REACT_APP_DOMAIN_NAME}/api/auth/token"
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 keycloak_openid = KeycloakOpenID(
     server_url=f"{KEYCLOAK_CONTAINER_URL}/auth",
     realm_name=KC_REALM_NAME,
-    client_id="admin-cli",
-    max_retries=3,
+    client_id=KC_REALM_COMMON_CLIENT,
+    client_secret_key=KC_CLIENT_SECRET_KEY,
+    max_retries=10,
 )
 
 keycloak_admin = KeycloakAdmin(
     server_url=f"{KEYCLOAK_CONTAINER_URL}/auth",
-    username=KEYCLOAK_ADMIN,
-    password=KEYCLOAK_ADMIN_PASSWORD,
+    username=KC_REALM_COMMON_USER,
+    password=KC_REALM_COMMON_USER_PASSWORD,
     user_realm_name=KC_REALM_NAME,
-    max_retries=3,
+    max_retries=10,
     verify=True,
 )
 

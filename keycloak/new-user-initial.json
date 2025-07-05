@@ -1,0 +1,16 @@
+{
+  "username": "${KC_REALM_COMMON_USER}",
+  "id": "${KC_REALM_COMMON_USER}",
+  "email": "${KC_REALM_COMMON_USER}@user.com",
+  "enabled": true,
+  "firstName": "Admin",
+  "lastName": "Admin",
+  "emailVerified": false,
+  "credentials": [
+    {
+      "temporary": false,
+      "value": "${KC_REALM_COMMON_USER_PASSWORD}",
+      "type": "password"
+    }
+  ]
+}
