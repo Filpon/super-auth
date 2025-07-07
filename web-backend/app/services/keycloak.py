@@ -104,7 +104,7 @@ async def register(username: str, password: str) -> JSONResponse:
             ],
         }
         # Creation user in Keycloak
-        user_id = await asyncio.to_thread(keycloak_admin.create_user, user_data)
+        user_id = await keycloak_admin.a_create_user(payload=user_data)
         if user_id is None:
             return JSONResponse(
                 content={"message": "User registered unsuccessfully"},
@@ -141,7 +141,7 @@ async def authenticate_user(username: str, password: str) -> TokenResponseSchema
     :returns dict token: Token
     """
     try:
-        token_response = await asyncio.to_thread(keycloak_openid.token, username, password)
+        token_response = await keycloak_openid.a_token(username=username, password=password)
         token_response["expires_in"] = str(token_response.get("expires_in", ""))
         token_response["refresh_expires_in"] = str(
             token_response.get("refresh_expires_in", "")
@@ -231,7 +231,7 @@ async def refresh_token(token: str) -> dict[str, str]:
     :returns dict token: New token
     """
     try:
-        refresh_token_response = await asyncio.to_thread(keycloak_openid.refresh_token, token)
+        refresh_token_response = await keycloak_openid.a_refresh_token(refresh_token=token)
         refresh_token_response["expires_in"] = str(
             refresh_token_response.get("expires_in", "")
         )
@@ -266,9 +266,7 @@ async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
     :returns dict token: New token verification
     """
     try:
-        return keycloak_openid.decode_token(
-            token=token
-        )
+        return await keycloak_openid.a_decode_token(token=token)
     except InvalidJWSSignature as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -306,8 +304,7 @@ async def fetch_userinfo_via_token(token: str = Depends(oauth2_scheme)):
     :returns dict decoted token: Decoded info
     """
     try:
-        aee = await asyncio.to_thread(keycloak_openid.decode_token, token)
-        return aee
+        return await keycloak_openid.a_decode_token(token=token)
     except KeycloakGetError as error:
         return JSONResponse(
             content=str(error.error_message),
@@ -356,7 +353,7 @@ async def logout(token: str) -> dict[str, str]:
     :rtype: dict
     """
     try:
-        return keycloak_openid.logout(refresh_token=token)
+        return await keycloak_openid.a_logout(refresh_token=token)
     except KeycloakGetError as error:
         return JSONResponse(
             content=str(error.error_message),
