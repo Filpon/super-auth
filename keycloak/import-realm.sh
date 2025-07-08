@@ -42,14 +42,13 @@ process_json_file "$JSON_FILE_USER" "$OUTPUT_FILE_USER"
 
 echo "Envs values are substituted. Results are saved in $OUTPUT_FILE_CLIENT and $OUTPUT_FILE_USER"
 
-sleep 5
+sleep 3
 echo $KC_REALM_NAME
 echo $KC_REALM_COMMON
 echo $KEYCLOAK_ADMIN
 echo $KEYCLOAK_ADMIN_PASSWORD
 echo $KC_REALM_COMMON_USER
 echo $KC_REALM_COMMON_USER_PASSWORD
-sleep 3
 
 # Variables
 KEYCLOAK_URL="http://localhost:8080"  # Adjust if necessary
@@ -63,7 +62,7 @@ sleep 10
 echo "10 seconds have passed."
 
 # Log in to Keycloak
-/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm $KC_REALM_NAME --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
+/opt/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL --realm $KC_REALM_NAME --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
 
 sleep 3
 
