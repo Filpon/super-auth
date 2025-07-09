@@ -57,14 +57,14 @@ echo "Starting the script..."
 
 /opt/keycloak/bin/kc.sh start-dev &
 
-sleep 10
+sleep 25
 
-echo "10 seconds have passed."
+echo "25 seconds have passed."
 
 # Log in to Keycloak
 /opt/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL --realm $KC_REALM_NAME --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
 
-sleep 3
+sleep 5
 
 echo "Keycloak started and Admin CLI configured."
 
