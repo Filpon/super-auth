@@ -1,11 +1,8 @@
 import React from 'react';
-import './index.css';
-import './styles.scss';
-import * as serviceWorker from './serviceWorker.js';
-import { createRoot } from 'react-dom/client'; // Correct import for React 18
+import ReactDOM from 'react-dom/client';
 import { App } from './App.tsx';
-
-const rootElement = document.getElementById('root');
+import * as serviceWorker from './serviceWorker.ts';
+import './styles.scss';
 
 // Checking localStorage availability
 try {
@@ -17,12 +14,12 @@ try {
   console.error('Error accessing localStorage:', error);
 }
 
-const root = createRoot(rootElement); // Create a root
+const root = ReactDOM.createRoot(document.getElementById('root')!);
 
 root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 );
 
 serviceWorker.unregister();
