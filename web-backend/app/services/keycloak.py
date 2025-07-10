@@ -107,11 +107,11 @@ async def register(username: str, password: str) -> JSONResponse:
         user_id = await keycloak_admin.a_create_user(payload=user_data)
         if user_id is None:
             return JSONResponse(
-                content={"message": "User registered unsuccessfully"},
-                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": f"User {username} was registered unsuccessfully"},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return JSONResponse(
-            content={"message": "User registered successfully"},
+            content={"message": f"User {username} was registered successfully"},
             status_code=status.HTTP_201_CREATED,
         )
     except KeycloakConnectionError as error:
@@ -119,11 +119,27 @@ async def register(username: str, password: str) -> JSONResponse:
             content=f"Connection to Keycloak error - {str(error.error_message)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-    except KeycloakPostError as error:
-        print(f"ERROR={error=}")
+    except KeycloakAuthenticationError as error:
         return JSONResponse(
-            content="Username already exists",
-            status_code=status.HTTP_409_CONFLICT,
+            content=f"Error user credentials - {str(error.error_message)}",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    except KeycloakPostError as error:
+        error_message_text_lower = error.error_message.decode("utf-8").lower()
+
+        if "realm" in error_message_text_lower and "not exists" in error_message_text_lower:
+            return JSONResponse(
+                content="Realm does not exist",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        if "user" in error_message_text_lower and "exists" in error_message_text_lower:
+            return JSONResponse(
+                content=f"Username {username} already exists",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        return JSONResponse(
+            content=f"Keycloak Post Error - {str(error.error_message)}",
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as exception:
         raise HTTPException(
