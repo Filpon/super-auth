@@ -24,6 +24,7 @@ import { ReactComponent as InvisibleInput } from './pictures/InvisibleInput.svg'
 export const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showError, setShowError] = useState(false);
@@ -31,7 +32,9 @@ export const Register = () => {
   const [isDisabled, setDisabled] = useState<boolean>(false);
   const [usernameError, setUsernameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const navigate = useNavigate();
 
   const handleCloseError = () => setShowError(false);
@@ -67,6 +70,17 @@ export const Register = () => {
     }
   };
 
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputConfirmPassword = e.target.value;
+    setConfirmPassword(inputConfirmPassword);
+    // Validate confirm password
+    if (inputConfirmPassword !== password) {
+      setConfirmPasswordError('Passwords do not match');
+    } else {
+      setConfirmPasswordError('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setShowError(false);
@@ -95,7 +109,7 @@ export const Register = () => {
         setError('Username already exists');
         setShowError(true);
       } else if (error.response && error.response.status === 500) {
-        setError('Server error');
+        setError('Server connection error');
         setShowError(true);
       } else if (error?.code === 'ECONNABORTED') {
         setError('Connection to server is not established');
@@ -112,9 +126,15 @@ export const Register = () => {
       setDisabled(false);
     }
   };
+
   const toggleVisibility = async () => {
     await new Promise((resolve) => setTimeout(resolve, 100)); // Delay simulation
     setIsVisible((prev) => !prev); // Toggle visibility
+  };
+
+  const toggleConfirmVisibility = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Delay simulation
+    setIsConfirmVisible((prev) => !prev); // Toggle visibility for confirm password
   };
 
   const isFormValid =
@@ -171,6 +191,25 @@ export const Register = () => {
                 </Button>
                 <Form.Control.Feedback type="invalid">
                   {passwordError}
+                </Form.Control.Feedback>
+              </Form.Group>
+              <Form.Group controlId="formConfirmPassword">
+                <Form.Label>Confirm Password</Form.Label>
+                <Form.Control
+                  type={isConfirmVisible ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  isInvalid={!!confirmPasswordError}
+                />
+                <Button
+                  variant="outline-secondary"
+                  onClick={toggleConfirmVisibility}
+                  className="visibility-switcher"
+                >
+                  {isConfirmVisible ? <VisibleInput /> : <InvisibleInput />}
+                </Button>
+                <Form.Control.Feedback type="invalid">
+                  {confirmPasswordError}
                 </Form.Control.Feedback>
               </Form.Group>
               <ErrorModal

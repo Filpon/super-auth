@@ -1,19 +1,25 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from app.services.keycloak import fetch_userinfo_via_token, oauth2_scheme
 
 from app.schemas.auth import Token, TokenResponseSchema
 from app.services.keycloak import (
     authenticate_user,
     fetch_callback,
+    fetch_userinfo_via_token,
     generate_authorization_url,
+    introspect_token,
     logout,
+    oauth2_scheme,
     refresh_token,
     register,
+    verify_token,
 )
 
 router = APIRouter()
+
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -54,12 +60,44 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict[str, s
     return token
 
 
+@router.get("/protected")
+async def protected_route(_: Token = Depends(verify_token)) -> Dict[str, str]:
+    """
+    Protected resource testing route.
+
+    The route is protected and requires a valid token to access.
+
+    :param _: The token is used for authentication, automatically
+    verified by the `verify_token` dependency.
+
+    :return Dict: Response containing message indicating access to the protected route.
+    """
+    return {"message": "This is the protected route"}
+
+
+@router.post("/introspect")
+async def introspect(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    """
+    Introspecting given token.
+
+    The route allows for the introspection of an OAuth2 token to retrieve its details.
+
+    :param token: The OAuth2 token to be introspected, automatically provided by
+    the `oauth2_scheme` dependency.
+
+    :return Dict: The result of the token introspection, which may include token
+    validity and associated features.
+    """
+    return await introspect_token(token=token)
+
+
 @router.post("/refresh", response_model=TokenResponseSchema)
-async def refresh(token: Token) -> dict[str, str]:
+async def refresh(token: Token) -> Dict[str, str]:
     """
     Refreshing auth token
 
     :param Token token: Token for refreshing
+
     :returns dict new_token: New token after refreshing
     """
     new_token = await refresh_token(token=token.token)
@@ -84,6 +122,7 @@ async def callback(request: Request) -> RedirectResponse:
     This endpoint receives the authorization code and exchanges it for tokens
 
     :param Request request: Request for endpoint
+
     :returns RedirectResponse: Response redirecting to callback
     """
     code = request.query_params.get("code")
@@ -103,4 +142,4 @@ async def logout_user(token: Token) -> None:
 
     :param str token: Token refreshing from Keycloak
     """
-    await logout(token.token)
+    return await logout(token.token)
