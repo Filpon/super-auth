@@ -259,39 +259,42 @@ def verify_permission(required_roles: list):
         token: str = Depends(oauth2_scheme),
     ) -> dict[str, str]:
         try:
-            token_info = keycloak_openid.decode_token(
-                token,
-                key=KEYCLOAK_PUBLIC_KEY,
-                options={"verify_signature": True, "verify_aud": False, "exp": True},
-            )
-
-            resource_access = token_info["resource_access"]
-            app_property = (
-                resource_access[KC_CLIENT_ID] if KC_CLIENT_ID in resource_access else {}
-            )
-            user_roles = app_property["roles"] if "roles" in app_property else []
-
+            token_info = await keycloak_openid.a_decode_token(token=token)
+            user_groups = token_info.get("groups", [])
             for role in required_roles:
-                if role not in user_roles:
+                if role not in user_groups:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"Role '{role}' is required to perform this action",
                     )
 
             return token_info
+        except JWTExpired as error:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token period expired",
+            ) from error
         except (KeycloakGetError, JWTError) as error:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=str(error),
-                headers={"WWW-Authenticate": "Bearer"},
             ) from error
         except Exception as exception:
+            if (
+                exception
+                and hasattr(exception, "status_code")
+                and hasattr(exception, "detail")
+            ):
+                raise HTTPException(
+                    status_code=exception.status_code,
+                    detail=exception.detail,
+                ) from exception
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"{str(exception)} - {exception.__class__}",
             ) from exception
 
-    return verify_token
+    return verify_permission_token
 
 
 async def refresh_token(token: str) -> TokenResponseSchema:

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
@@ -9,12 +9,14 @@ from app.services.keycloak import (
     authenticate_user,
     fetch_callback,
     fetch_userinfo_via_token,
+    fetch_users,
     generate_authorization_url,
     introspect_token,
     logout,
     oauth2_scheme,
     refresh_token,
     register,
+    verify_permission,
     verify_token,
 )
 
@@ -113,6 +115,19 @@ async def generate_auth() -> RedirectResponse:
     """
     auth_url = await generate_authorization_url()
     return RedirectResponse(url=auth_url)
+
+
+@router.get("/users")
+async def fetch_all_users(_: dict = Depends(verify_permission(["admin"]))) -> List[Dict[str, Any]]:
+    """
+    Fetching users.
+
+    The route retrieves the list of all users from the database.
+
+    :param _ dict: A dictionary containing the request context, used for permission verification
+    :returns List[Dict[str, Any]]: List of users
+    """
+    return await fetch_users()
 
 
 @router.get("/callback")
