@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
@@ -381,7 +382,7 @@ async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
         ) from exception
 
 
-async def introspect_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
+async def introspect_token(token: str) -> Dict[str, str]:
     """
     New token verifying
 
@@ -483,6 +484,79 @@ async def fetch_users() -> dict[str, str]:
     """
     try:
         return await keycloak_admin.a_get_users()
+    except KeycloakAuthenticationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Error user credentials - {str(error.error_message)}",
+        ) from error
+
+    except KeycloakPostError as error:
+        error_message_text_lower = error.error_message.decode("utf-8").lower()
+        if (
+            "realm" in error_message_text_lower
+            and "not exists" in error_message_text_lower
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Keycloak Post Error - {str(error.error_message)}",
+        ) from error
+
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{exception.__class__}",
+        ) from exception
+
+
+async def delete_user(user_id: str) -> None:
+    """
+    Deleting user from Keycloak by user ID.
+
+    :param user_id: The ID of the user to delete.
+    :raises HTTPException: If there is an error during the deletion process.
+    """
+    try:
+        await keycloak_admin.a_delete_user(user_id=user_id)
+    except KeycloakAuthenticationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Error user credentials - {str(error.error_message)}",
+        ) from error
+
+    except KeycloakPostError as error:
+        error_message_text_lower = error.error_message.decode("utf-8").lower()
+        if (
+            "realm" in error_message_text_lower
+            and "not exists" in error_message_text_lower
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
+            ) from error
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Keycloak Post Error - {str(error.error_message)}",
+        ) from error
+
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{exception.__class__}",
+        ) from exception
+
+
+async def update_user(user_id: str, user_data: Dict[str, Any]) -> None:
+    """
+    Updating user in Keycloak by user ID.
+
+    :param user_id: The ID of the user to update.
+    :param user_data: Dictionary containing the updated user data.
+    :raises HTTPException: If there is an error during the updating process.
+    """
+    try:
+        await keycloak_admin.a_update_user(user_id=user_id, payload=user_data)
     except KeycloakAuthenticationError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

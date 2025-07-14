@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.schemas.auth import Token, TokenResponseSchema
+from app.schemas.auth import Token, TokenResponseSchema, UserUpdate
 from app.services.keycloak import (
     authenticate_user,
+    delete_user,
     fetch_callback,
     fetch_userinfo_via_token,
     fetch_users,
@@ -16,6 +17,7 @@ from app.services.keycloak import (
     oauth2_scheme,
     refresh_token,
     register,
+    update_user,
     verify_permission,
     verify_token,
 )
@@ -118,11 +120,13 @@ async def generate_auth() -> RedirectResponse:
 
 
 @router.get("/users")
-async def fetch_all_users(_: dict = Depends(verify_permission(["admin"]))) -> List[Dict[str, Any]]:
+async def fetch_all_users(
+    _: dict = Depends(verify_permission(["admin"])),
+) -> List[Dict[str, Any]]:
     """
     Fetching users.
 
-    The route retrieves the list of all users from the database.
+    The route retrieves the list of all users from the database
 
     :param _ dict: A dictionary containing the request context, used for permission verification
     :returns List[Dict[str, Any]]: List of users
@@ -148,6 +152,45 @@ async def callback(request: Request) -> RedirectResponse:
         )
     redirect_response = await fetch_callback(code=code)
     return redirect_response
+
+
+@router.delete("/users/{user_id}", response_description="User deleting")
+async def delete_user_by_id(
+    user_id: str,
+    _: dict = Depends(verify_permission(["admin"]))
+) -> Dict[str, str]:
+    """
+    Deleting user by ID
+
+    :param user_id: The ID of the user to delete
+    :param _: dict: A dictionary containing the request context, used for permission verification
+    :returns: A message indicating the result of the deletion
+    """
+    await delete_user(user_id=user_id)
+    return {"message": f"User with ID {user_id} has been deleted."}
+
+
+@router.put("/users/{user_id}", response_description="User updating")
+async def update_user_by_id(
+    user_id: str,
+    user_update: UserUpdate,
+    _: dict = Depends(verify_permission(["admin"])),
+) -> Dict[str, str]:
+    """
+    Updating user by ID
+
+    :param user_id: The ID of the user to update
+    :param user_update: A dictionary containing the updated user data
+    :param _: dict: A dictionary containing the request context, used for permission verification
+    :returns: A message indicating the result of the update
+    """
+    user_data = {
+        "credentials": [
+            {"type": "password", "value": user_update.new_password, "temporary": False}
+        ]
+    }
+    await update_user(user_id=user_id, user_data=user_data)
+    return {"message": f"User with ID {user_id} has been updated."}
 
 
 @router.post("/logout")

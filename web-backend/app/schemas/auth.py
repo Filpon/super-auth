@@ -31,3 +31,11 @@ class TokenResponseCallbackSchema(BaseModel):
 
     access_token: str
     id_token: str
+
+
+class UserUpdate(BaseModel):
+    """
+    Class representing user update
+
+    """
+    new_password: str
