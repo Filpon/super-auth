@@ -1,6 +1,6 @@
 {
   "name": "auth-react-app",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.13.5",
@@ -35,7 +35,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "format": "prettier --write ./src",
-    "release": "standard-version",
+    "release": "standard-version --infile ../CHANGELOG.md",
     "seslint": "eslint --fix --max-warnings=0 --ignore-pattern 'node_modules' src"
   },
   "standard-version": {
