@@ -65,34 +65,6 @@ keycloak_admin = KeycloakAdmin(
 )
 
 
-def base64_to_pem(base64_string: str) -> str:
-    """
-    Converting base64 to pem_formatted
-
-    :param str username: Username for register process
-    :param str password: Password for register process
-    :returns dict token: Token in Privacy-Enhanced Mail formatted public key
-    """
-    # Remove any whitespace characters
-    base64_string = base64_string.strip()
-
-    # Wrap the Base64 string with PEM headers
-    pem_header = "-----BEGIN PUBLIC KEY-----\n"
-    pem_footer = "-----END PUBLIC KEY-----\n"
-
-    # Split the Base64 string into lines of 64 characters
-    pem_body = "\n".join(
-        [base64_string[i : i + 64] for i in range(0, len(base64_string), 64)]
-    )
-
-    # Combine all parts
-    pem_formatted = pem_header + pem_body + pem_footer
-    return pem_formatted
-
-
-KEYCLOAK_PUBLIC_KEY = base64_to_pem(base64_string=keycloak_openid.public_key())
-
-
 async def register(username: str, password: str) -> JSONResponse:
     """
     User registering
