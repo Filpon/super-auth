@@ -133,7 +133,7 @@ Access to the application can be established via [localhost](http://localhost) i
 
 ## API Endpoints
 
-All current project API endpoints are available at [API DOCS PAGE](http://localhost/api/docs)
+All current project API endpoints are available at [API DOCS PAGE](http://localhost/api/v1/docs)
 
 ## Avaibility, versions and additional features
 

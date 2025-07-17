@@ -32,7 +32,7 @@ async def test_sucess_keycloak_auth(
         mock_get.return_value = Response(status_code=200, json={"message": "success"})
 
         # Make a request to the mocked endpoint
-        response = await async_client.post("/api/auth/token")
+        response = await async_client.post("/api/v1/auth/token")
 
         # Assert the status code
         assert response.status_code == 200
@@ -62,6 +62,6 @@ async def test_unsucess_keycloak_auth(
 
         # Make a request to the mocked endpoint
         mock_get.return_value = Response(status_code=401, json={"message": "Unsucessful auth"})
-        response = await async_client.post("/api/auth/token")
+        response = await async_client.post("/api/v1/auth/token")
         # Assert the status code
         assert response.status_code == 401

@@ -45,7 +45,7 @@ KEYCLOAK_CONTAINER_BASE_URL = f"{KEYCLOAK_CONTAINER_URL}/auth/realms/{KC_REALM_N
 
 REDIRECT_URI = f"{KEYCLOAK_CONTAINER_URL}/callback"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 keycloak_openid = KeycloakOpenID(
     server_url=f"{KEYCLOAK_CONTAINER_URL}/auth",
@@ -422,7 +422,7 @@ async def generate_authorization_url() -> str:
     :returns str token: New auth url
     """
     auth_url = keycloak_openid.auth_url(
-        redirect_uri=f"{REACT_APP_BACKEND_URL}/api/auth/callback", scope="openid"
+        redirect_uri=f"{REACT_APP_BACKEND_URL}/api/v1/auth/callback", scope="openid"
     )
     return auth_url
 
@@ -456,7 +456,7 @@ async def fetch_callback(code: str = Depends(oauth2_scheme)) -> dict[str, str]:
     try:
         # Exchanging the authorization code for tokens
         token_callback_response = keycloak_openid.token(
-            code=code, redirect_uri=f"{REACT_APP_BACKEND_URL}/api/auth/callback"
+            code=code, redirect_uri=f"{REACT_APP_BACKEND_URL}/api/v1/auth/callback"
         )
         token_callback_response["access_token"] = str(
             token_callback_response.get("access_token", "")

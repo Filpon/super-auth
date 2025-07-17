@@ -31,6 +31,6 @@ async def test_create_event(
         mock_post.return_value = Response(status_code=200, json={"message": "success"})
 
         # Make a request to the mocked endpoint
-        response = await async_client.post("/api/events")
+        response = await async_client.post("/api/v1/events")
 
         assert response.status_code == 200

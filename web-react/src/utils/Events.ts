@@ -9,7 +9,7 @@ export const createEvent = async (name: string, date: string) => {
 
   if (accessToken && refreshToken) {
     const response: AxiosResponse = await apiRequest.post(
-      '/api/events/create',
+      '/api/v1/events/create',
       JSON.stringify({
         name,
         date: new Date(date),
@@ -35,7 +35,7 @@ export const fetchEvents = async () => {
   const refreshToken = localStorage.getItem('refresh_token');
 
   if (accessToken && refreshToken) {
-    const response: AxiosResponse = await apiRequest.get('/api/events', {
+    const response: AxiosResponse = await apiRequest.get('/api/v1/events', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,

@@ -20,17 +20,17 @@ ORIGINS = os.getenv("ORIGINS")
 print(f"{ORIGINS=}")
 
 # FastAPI app creation
-app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi")
+app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
 
 app.include_router(
     auth.router,
-    prefix="/api/auth",
+    prefix="/api/v1/auth",
     tags=["auth"]
 )
 
 app.include_router(
     events.router,
-    prefix="/api/events",
+    prefix="/api/v1/events",
     tags=["events"],
     dependencies=[Depends(verify_token)],
 )

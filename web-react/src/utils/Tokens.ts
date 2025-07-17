@@ -31,7 +31,7 @@ export const checkRefreshToken = async () => {
       clearTokens();
       try {
         const response: AxiosResponse = await apiRequest.post(
-          '/api/auth/refresh',
+          '/api/v1/auth/refresh',
           JSON.stringify({
             token: refreshToken,
           }),
@@ -64,7 +64,7 @@ export const checkAccessToken = async () => {
       clearTokens();
       try {
         const response: any = await apiRequest.post(
-          '/api/auth/refresh',
+          '/api/v1/auth/refresh',
           JSON.stringify({
             token: accessToken,
           }),
@@ -98,7 +98,7 @@ export const createFormData = async (username: string, password: string) => {
 export const fetchTokens = async (username: string, password: string) => {
   const formData = await createFormData(username, password);
   const response: AxiosResponse = await apiRequest.post(
-    '/api/auth/token',
+    '/api/v1/auth/token',
     formData,
   );
   if (response.status >= 400) {
@@ -114,7 +114,7 @@ export const handleRegister = async (username: string, password: string) => {
   const formData = await createFormData(username, password);
   console.log(formData);
   const response: AxiosResponse = await apiRequest.post(
-    '/api/auth/register',
+    '/api/v1/auth/register',
     formData,
   );
   console.log(response);

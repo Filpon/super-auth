@@ -25,7 +25,7 @@ USER, PASSWORD = generate_test_credentials()
 ACCESS_TOKEN = generate_random_keycloak_token()
 REFRESH_TOKEN = generate_random_keycloak_token()
 BASE_URL = f"{REACT_APP_BACKEND_URL}{REACT_APP_DOMAIN_NAME}"
-TOKEN_URL = f"{BASE_URL}/api/auth"
+TOKEN_URL = f"{BASE_URL}/api/v1/auth"
 
 
 class MockKeycloakOpenID:
