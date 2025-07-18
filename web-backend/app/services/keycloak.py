@@ -446,16 +446,15 @@ async def fetch_callback(code: str = Depends(oauth2_scheme)) -> dict[str, str]:
         ) from exception
 
 
-async def fetch_users() -> dict[str, str]:
+async def fetch_users() -> dict[str, list[dict[str, Any]]]:
     """
     Users fetching
 
-    :param str token: Keycloak token for refreshing
-    :returns: Keycloak server response
-    :rtype: dict
+    :returns dict: Users fetching result
     """
     try:
-        return await keycloak_admin.a_get_users()
+        users_response_result: list[dict[str, Any]] = await keycloak_admin.a_get_users()
+        return {"users": users_response_result}
     except KeycloakAuthenticationError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

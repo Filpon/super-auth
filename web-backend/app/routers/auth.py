@@ -122,14 +122,14 @@ async def generate_auth() -> RedirectResponse:
 @router.get("/users")
 async def fetch_all_users(
     _: dict = Depends(verify_permission(["admin"])),
-) -> List[Dict[str, Any]]:
+) -> dict[str, list[dict[str, Any]]]:
     """
-    Fetching users.
+    Fetching all users
 
-    The route retrieves the list of all users from the database
+    The route retrieves list of all users from the database
 
     :param _ dict: A dictionary containing the request context, used for permission verification
-    :returns List[Dict[str, Any]]: List of users
+    :returns dict[str, list[dict[str, Any]]]: List of users dictionaries
     """
     return await fetch_users()
 
