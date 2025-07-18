@@ -11,4 +11,4 @@ RUN uv sync --frozen --no-cache
 
 CMD ["./.venv/bin/alembic" "upgrade", "head"]
 
-CMD [".venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD [".venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]

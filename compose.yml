@@ -35,7 +35,7 @@ services:
   backend:
     build: ./web-backend
     ports:
-      - 8888:8888
+      - ${BACKEND_PORT}:${BACKEND_PORT}
     environment:
       PYTHONPATH: /app
       KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
