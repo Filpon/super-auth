@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from aiokafka.admin import NewTopic
 from dotenv import load_dotenv
@@ -7,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.brokers.kafka import start_admin_client, start_kafka_producer
-from app.configs.logging import logger
+from app.configs.logging import project_logger
 from app.database.db import engine
 from app.database.models import Base
 from app.routers import auth, events
@@ -15,19 +16,12 @@ from app.services.keycloak import verify_permission, verify_token
 
 load_dotenv()  # Environmental variables
 
-ORIGINS = os.getenv("ORIGINS")
-
+ORIGINS: Optional[str] = os.getenv("ORIGINS")
 print(f"{ORIGINS=}")
 
 # FastAPI app creation
 app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
-
-app.include_router(
-    auth.router,
-    prefix="/api/v1/auth",
-    tags=["auth"]
-)
-
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(
     events.router,
     prefix="/api/v1/events",
@@ -36,9 +30,8 @@ app.include_router(
 )
 
 # Configure CORS
-origins = ORIGINS.split(sep=",")
+origins = ORIGINS.split(sep=",") if ORIGINS else []
 print(f"{origins=}")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -46,6 +39,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/api")
 async def root() -> Response:
@@ -56,8 +50,9 @@ async def root() -> Response:
     """
     return Response(status_code=status.HTTP_200_OK)
 
+
 @app.get("/admin")  # Requires the admin role
-def call_admin(user = Depends(verify_permission(required_roles=["admin"]))):
+def call_admin(user: str = Depends(verify_permission(required_roles=["admin"]))) -> str:
     """
     Admin role obtaining
 
@@ -66,20 +61,22 @@ def call_admin(user = Depends(verify_permission(required_roles=["admin"]))):
     """
     return f"Hello, admin {user}"
 
+
 # Database creation
 @app.on_event("startup")
-async def startup():
+async def startup() -> None:
     """
     Starting database creation
 
     """
     async with engine.begin() as connector:
         await connector.run_sync(Base.metadata.create_all)
-    logger.info("Database creation was finished")
+    project_logger.info("Database creation was finished")
     app.state.producer = await start_kafka_producer()
 
+
 @app.post("/send")
-async def send_message(message: str):
+async def send_message(message: str) -> dict[str, str]:
     """
     Sending message to a Kafka topic.
 
@@ -89,11 +86,14 @@ async def send_message(message: str):
     :param str message: The message to be sent to the Kafka topic.
     :return dict: A JSON response indicating the status of the message sending.
     """
-    await app.state.producer.send_and_wait('my_topic', message.encode('utf-8'))
+    await app.state.producer.send_and_wait("my_topic", message.encode("utf-8"))
     return {"message": "Message sent to Kafka"}
 
+
 @app.post("/create_topic")
-async def create_topic(topic_name: str, num_partitions: int = 1, replication_factor: int = 1):
+async def create_topic(
+    topic_name: str, num_partitions: int = 1, replication_factor: int = 1
+) -> dict[str, str]:
     """Create a new Kafka topic.
 
     This endpoint allows you to create a new Kafka topic by providing the topic name,
@@ -125,8 +125,6 @@ async def create_topic(topic_name: str, num_partitions: int = 1, replication_fac
 
 
 if __name__ == "__main__":
-    import asyncio
-
     import uvicorn
 
-    asyncio.run(uvicorn.run(app, host="0.0.0.0", port=8001))
+    uvicorn.run(app, host="0.0.0.0", port=8001)

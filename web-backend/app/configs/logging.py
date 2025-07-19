@@ -6,7 +6,9 @@ from loguru import logger
 log_level = os.getenv("LOG_LEVEL", "INFO")
 log_file = os.getenv("LOG_FILE", "")
 
-logger.add(
+project_logger = logger
+
+project_logger.add(
     "../logs/logfile.log",
     rotation="1 MB",
     retention="10 days",

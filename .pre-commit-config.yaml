@@ -10,15 +10,17 @@ repos:
         language: system
         types: [python]
   - repo: local
-
     hooks:
-      - id: pylint
-        name: Running pylint
-        entry: pylint --rcfile=./web-backend/pyproject.toml ./web-backend
+      - id: mypy
+        name: Running mypy
+        entry: mypy . ./app
+        additional_dependencies: [mypy]
         language: python
         types: [python]
         stages: [pre-commit]
+        args: ["--config-file", "pyproject.toml"]
         files: ^web-backend/.*\.py$
+        working_dir: web-backend
   - repo: local
     hooks:
       - id: ruff

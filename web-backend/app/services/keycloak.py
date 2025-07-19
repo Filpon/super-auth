@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Awaitable, Callable
 
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
@@ -206,7 +206,9 @@ async def authenticate_user(username: str, password: str) -> TokenResponseSchema
         ) from exception
 
 
-def verify_permission(required_roles: list):
+def verify_permission(
+    required_roles: list[str],
+) -> Callable[[str], Awaitable[dict[str, str]]] | Any:
     """Verify user permissions based on required roles.
 
     This function returns an asynchronous dependency that verifies if the user
@@ -230,7 +232,7 @@ def verify_permission(required_roles: list):
 
     async def verify_permission_token(  # pylint: disable=W0612
         token: str = Depends(oauth2_scheme),
-    ) -> dict[str, str]:
+    ) -> dict[str, str] | Any:
         try:
             token_info = await keycloak_openid.a_decode_token(token=token)
             user_groups = token_info.get("groups", [])
@@ -320,7 +322,7 @@ async def refresh_token(token: str) -> TokenResponseSchema:
         ) from exception
 
 
-async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
+async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[Any, Any] | Any:
     """
     New token verifying
 
@@ -354,7 +356,7 @@ async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
         ) from exception
 
 
-async def introspect_token(token: str) -> Dict[str, str]:
+async def introspect_token(token: str) -> dict[str, Any] | Any:
     """
     New token verifying
 
@@ -387,7 +389,7 @@ async def introspect_token(token: str) -> Dict[str, str]:
         ) from exception
 
 
-async def generate_authorization_url() -> str:
+async def generate_authorization_url() -> str | Any:
     """
     Generating the authorization URL
 
@@ -399,7 +401,9 @@ async def generate_authorization_url() -> str:
     return auth_url
 
 
-async def fetch_userinfo_via_token(token: str = Depends(oauth2_scheme)):
+async def fetch_userinfo_via_token(
+    token: str = Depends(oauth2_scheme),
+) -> dict[str, Any] | Any:
     """
     Userinfo via token fetching
 
@@ -408,10 +412,10 @@ async def fetch_userinfo_via_token(token: str = Depends(oauth2_scheme)):
     try:
         return await keycloak_openid.a_decode_token(token=token)
     except KeycloakGetError as error:
-        return JSONResponse(
-            content=str(error.error_message),
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-        )
+            detail=str(error.error_message),
+        ) from error
     except Exception as exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -419,7 +423,9 @@ async def fetch_userinfo_via_token(token: str = Depends(oauth2_scheme)):
         ) from exception
 
 
-async def fetch_callback(code: str = Depends(oauth2_scheme)) -> dict[str, str]:
+async def fetch_callback(
+    code: str = Depends(oauth2_scheme),
+) -> TokenResponseCallbackSchema:
     """
     Callback and code exchanging
 
@@ -518,7 +524,7 @@ async def delete_user(user_id: str) -> None:
         ) from exception
 
 
-async def update_user(user_id: str, user_data: Dict[str, Any]) -> None:
+async def update_user(user_id: str, user_data: dict[str, Any]) -> None:
     """
     Updating user in Keycloak by user ID.
 
@@ -555,7 +561,7 @@ async def update_user(user_id: str, user_data: Dict[str, Any]) -> None:
         ) from exception
 
 
-async def logout(token: str) -> dict[str, str]:
+async def logout(token: str) -> dict[str, Any] | Any:
     """
     Log out the authenticated user
 
@@ -565,11 +571,11 @@ async def logout(token: str) -> dict[str, str]:
     """
     try:
         return await keycloak_openid.a_logout(refresh_token=token)
-    except KeycloakGetError as error:
-        return JSONResponse(
-            content=str(error.error_message),
+    except KeycloakPostError as error:
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-        )
+            detail=f"{error.error_message}",
+        ) from error
     except Exception as exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exception)

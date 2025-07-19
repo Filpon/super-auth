@@ -1,10 +1,15 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.schemas.auth import Token, TokenResponseSchema, UserUpdate
+from app.schemas.auth import (
+    Token,
+    TokenResponseCallbackSchema,
+    TokenResponseSchema,
+    UserUpdate,
+)
 from app.services.keycloak import (
     authenticate_user,
     delete_user,
@@ -27,7 +32,7 @@ router = APIRouter()
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-):
+) -> dict[str, Any]:
     """
     Current user fetching via token
 
@@ -39,33 +44,31 @@ async def get_current_user(
 @router.post("/register")
 async def register_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
-) -> dict[str, str]:  # pylint: disable=W0613
+) -> JSONResponse:  # pylint: disable=W0613
     """
     User registering
 
     :param OAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Auth token obtaining
     """
-    response = await register(form_data.username, form_data.password)
-    return response
+    return await register(form_data.username, form_data.password)
 
 
 @router.post("/token", response_model=TokenResponseSchema)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict[str, str]:
+async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> TokenResponseSchema:
     """
     Token for user auth
 
     :param OAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Token obtaining
     """
-    token = await authenticate_user(
+    return await authenticate_user(
         username=form_data.username, password=form_data.password
     )
-    return token
 
 
 @router.get("/protected")
-async def protected_route(_: Token = Depends(verify_token)) -> Dict[str, str]:
+async def protected_route(_: Token = Depends(verify_token)) -> dict[str, str]:
     """
     Protected resource testing route.
 
@@ -80,7 +83,7 @@ async def protected_route(_: Token = Depends(verify_token)) -> Dict[str, str]:
 
 
 @router.post("/introspect")
-async def introspect(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+async def introspect(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     """
     Introspecting given token.
 
@@ -96,7 +99,7 @@ async def introspect(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
 
 
 @router.post("/refresh", response_model=TokenResponseSchema)
-async def refresh(token: Token) -> Dict[str, str]:
+async def refresh(token: Token) -> TokenResponseSchema:
     """
     Refreshing auth token
 
@@ -104,8 +107,7 @@ async def refresh(token: Token) -> Dict[str, str]:
 
     :returns dict new_token: New token after refreshing
     """
-    new_token = await refresh_token(token=token.token)
-    return new_token
+    return await refresh_token(token=token.token)
 
 
 @router.get("/generate-auth")
@@ -121,7 +123,7 @@ async def generate_auth() -> RedirectResponse:
 
 @router.get("/users")
 async def fetch_all_users(
-    _: dict = Depends(verify_permission(["admin"])),
+    _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"])),
 ) -> dict[str, list[dict[str, Any]]]:
     """
     Fetching all users
@@ -135,7 +137,7 @@ async def fetch_all_users(
 
 
 @router.get("/callback")
-async def callback(request: Request) -> RedirectResponse:
+async def callback(request: Request) -> TokenResponseCallbackSchema:
     """
     Callback endpoint to handle the response from Keycloak after user authentication.
     This endpoint receives the authorization code and exchanges it for tokens
@@ -150,15 +152,14 @@ async def callback(request: Request) -> RedirectResponse:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Authorization code not found",
         )
-    redirect_response = await fetch_callback(code=code)
-    return redirect_response
+    return await fetch_callback(code=code)
 
 
 @router.delete("/users/{user_id}", response_description="User deleting")
 async def delete_user_by_id(
     user_id: str,
-    _: dict = Depends(verify_permission(["admin"]))
-) -> Dict[str, str]:
+    _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"]))
+) -> dict[str, str]:
     """
     Deleting user by ID
 
@@ -174,8 +175,8 @@ async def delete_user_by_id(
 async def update_user_by_id(
     user_id: str,
     user_update: UserUpdate,
-    _: dict = Depends(verify_permission(["admin"])),
-) -> Dict[str, str]:
+    _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"])),
+) -> dict[str, str]:
     """
     Updating user by ID
 
@@ -194,7 +195,7 @@ async def update_user_by_id(
 
 
 @router.post("/logout")
-async def logout_user(token: Token) -> None:
+async def logout_user(token: Token) -> dict[str, Any]:
     """
     Class representing logout
 

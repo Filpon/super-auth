@@ -1,20 +1,22 @@
+from typing import Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db
 from app.database.models import Event
-from app.database.repository import ModelRepository
+from app.database.repository import ModelRepository, ModelType
 from app.routers.auth import get_current_user
 from app.schemas.events import EventCreateSchema, EventFetchSchema
 
 router = APIRouter()
 
+
 @router.post("/create", response_model=EventCreateSchema)
 async def create_event(
     event: EventCreateSchema,
-    user: dict = Depends(get_current_user),
+    user: dict[str, Any] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> EventCreateSchema | Any:
     """
     Event creation for authenticated user
 
@@ -34,7 +36,10 @@ async def create_event(
 
 
 @router.get("", response_model=list[EventFetchSchema])
-async def fetch_events(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db),):
+async def fetch_events(
+    user: dict[str, Any] = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Sequence[ModelType]:
     """
     Events for current user fetching
 
@@ -42,4 +47,6 @@ async def fetch_events(user: dict = Depends(get_current_user), db: AsyncSession 
     :param AsyncSession db: Current database session
     """
     repository_events = ModelRepository(session=db, model=Event)
-    return await repository_events.fetch_by_filters(filters={"client_info": user["azp"]})
+    return await repository_events.fetch_by_filters(
+        filters={"client_info": user["azp"]}
+    )
