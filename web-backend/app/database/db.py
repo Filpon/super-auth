@@ -1,11 +1,10 @@
 import os
-
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
-from app.configs.logging import logger
+from typing import AsyncGenerator
 
 from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.configs.logging import logger
 
 load_dotenv()
 
@@ -15,12 +14,12 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(url=DATABASE_URL, echo=True)
 
 # Sessionmaker creation
-ASYNC_SESSION_LOCAL = sessionmaker(
+ASYNC_SESSION_LOCAL = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
 )
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Session obtaining for service functionality
 
