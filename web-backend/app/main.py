@@ -1,11 +1,15 @@
 import os
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 from aiokafka.admin import NewTopic
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIASGIMiddleware
+from slowapi.util import get_remote_address
 
 from app.brokers.kafka import start_admin_client, start_kafka_producer
 from app.configs.logging import project_logger
@@ -13,6 +17,7 @@ from app.database.db import engine
 from app.database.models import Base
 from app.routers import auth, events
 from app.services.keycloak import verify_permission, verify_token
+from app.utils.handlers import rate_limit_exceeded_handler
 
 load_dotenv()  # Environmental variables
 
@@ -21,6 +26,30 @@ print(f"{ORIGINS=}")
 
 # FastAPI app creation
 app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
+limiter = Limiter(key_func=get_remote_address, application_limits=["3/5seconds"])
+app.add_middleware(SlowAPIASGIMiddleware)
+app.state.limiter = limiter
+
+
+# Handling RateLimitExceeded exception
+@app.exception_handler(RateLimitExceeded)
+async def handle_rate_limit_exceeded(
+    request: Request, exception_name: RateLimitExceeded
+) -> Callable[[Request, Exception], Response | Awaitable[Response]] | JSONResponse:
+    """
+    Exception handling for RateLimitExceeded.
+
+    This function is called when a request exceeds the allowed rate limit.
+    It delegates the handling to the rate_limit_exceeded_handler
+
+    :param request Request: The FastAPI request object
+    :param exception_name RateLimitExceeded: The RateLimitExceeded exception instance
+    :returns: JSONResponse with 429 status code and error message
+    """
+    return await rate_limit_exceeded_handler(_=request, __=exception_name)
+
+
+app.add_exception_handler(RateLimitExceeded, handle_rate_limit_exceeded)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(
     events.router,
