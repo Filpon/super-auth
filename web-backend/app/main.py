@@ -70,7 +70,7 @@ app.add_middleware(
 )
 
 
-@app.get("/api")
+@app.get("/check")
 async def root() -> Response:
     """
     API Healthcheck
