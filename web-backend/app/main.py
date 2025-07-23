@@ -12,7 +12,7 @@ from slowapi.middleware import SlowAPIASGIMiddleware
 from slowapi.util import get_remote_address
 
 from app.brokers.kafka import start_admin_client, start_kafka_producer
-from app.configs.logging import project_logger
+from app.configs.logging import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
 from app.routers import auth, events
@@ -20,9 +20,9 @@ from app.services.keycloak import verify_permission, verify_token
 from app.utils.handlers import rate_limit_exceeded_handler
 
 load_dotenv()  # Environmental variables
+logger = configure_logging_handler()
 
-ORIGINS: Optional[str] = os.getenv("ORIGINS")
-print(f"{ORIGINS=}")
+ORIGINS: Optional[str] = os.getenv("ORIGINS", "")
 
 # FastAPI app creation
 app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
@@ -60,7 +60,7 @@ app.include_router(
 
 # Configure CORS
 origins = ORIGINS.split(sep=",") if ORIGINS else []
-print(f"{origins=}")
+logger.info("ORIGINS=%s", ORIGINS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -100,7 +100,7 @@ async def startup() -> None:
     """
     async with engine.begin() as connector:
         await connector.run_sync(Base.metadata.create_all)
-    project_logger.info("Database creation was finished")
+    logger.info("Database creation was finished")
     app.state.producer = await start_kafka_producer()
 
 

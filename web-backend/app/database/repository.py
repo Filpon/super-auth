@@ -3,8 +3,10 @@ from typing import Any, Generic, Sequence, TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.configs.logging import project_logger
+from app.configs.logging import configure_logging_handler
 from app.database.models import Base
+
+logger = configure_logging_handler()
 
 ModelType = TypeVar("ModelType", bound=Base)  # pylint: disable=C0103
 
@@ -19,7 +21,6 @@ class ModelRepository(Generic[ModelType]):
         self.session = session
         self.model = model
 
-
     async def fetch_by_id(self, id: int) -> ModelType | None:  # pylint: disable=W0622
         """
         Fetching results by id
@@ -27,12 +28,11 @@ class ModelRepository(Generic[ModelType]):
         :param int id: Identificator for filtering
         :return ModelType | None results: Filtered results
         """
-        project_logger.info(f"Fetching record with {id=}")
+        logger.info("Fetching record with id=%s", id)
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )
         return result.scalars().first()
-
 
     async def fetch_by_filters(self, **filters: Any) -> Sequence[ModelType]:
         """
@@ -50,7 +50,6 @@ class ModelRepository(Generic[ModelType]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-
     async def fetch_all(self) -> Sequence[ModelType]:
         """
         Fetching all results
@@ -59,7 +58,6 @@ class ModelRepository(Generic[ModelType]):
         """
         result = await self.session.execute(select(self.model))
         return result.scalars().all()
-
 
     async def create(self, obj: ModelType) -> Any:
         """

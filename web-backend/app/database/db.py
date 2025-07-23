@@ -4,9 +4,10 @@ from typing import AsyncGenerator
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.configs.logging import project_logger
+from app.configs.logging import configure_logging_handler
 
 load_dotenv()
+logger = configure_logging_handler()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL is None:
@@ -28,4 +29,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     async with ASYNC_SESSION_LOCAL() as session:
         yield session
-    project_logger.info("Database session was created")
+    logger.info("Database session was created")
