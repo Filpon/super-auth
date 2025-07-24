@@ -61,12 +61,14 @@ export const Register = () => {
     const inputPassword = e.target.value;
     setPassword(inputPassword);
     // Validate password
-    if (passwordRegex.test(inputPassword)) {
-      setPasswordError('');
+    if (inputPassword.trim() === '') {
+        setPasswordError('Password should not be empty');
+    } else if (inputPassword.length < 6) {
+        setPasswordError('Password should be at least 6 characters long');
+    } else if (!passwordRegex.test(inputPassword)) {
+        setPasswordError('Password includes latin letters, numbers and special characters');
     } else {
-      setPasswordError(
-        'Password\n- should not be empty;\n at least 6 characters long;\nincludes latin letters, numbers, and special characters',
-      );
+        setPasswordError('');
     }
   };
 
@@ -74,10 +76,12 @@ export const Register = () => {
     const inputConfirmPassword = e.target.value;
     setConfirmPassword(inputConfirmPassword);
     // Validate confirm password
-    if (inputConfirmPassword !== password) {
-      setConfirmPasswordError('Passwords do not match');
+    if (inputConfirmPassword.trim() === '') {
+        setConfirmPasswordError('Please confirm your password');
+    } else if (inputConfirmPassword !== password) {
+        setConfirmPasswordError('Passwords do not match');
     } else {
-      setConfirmPasswordError('');
+        setConfirmPasswordError('');
     }
   };
 
