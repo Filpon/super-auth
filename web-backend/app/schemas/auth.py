@@ -39,3 +39,13 @@ class UserUpdate(BaseModel):
 
     """
     new_password: str
+
+
+class CustomOAuth2PasswordRequestForm(BaseModel):
+    """
+    Class representing form for OAuth2 grant type,
+    containing necessary fields for user credentials
+
+    """
+    username: str
+    password: str

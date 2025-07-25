@@ -2,9 +2,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.security import OAuth2PasswordRequestForm
 
 from app.schemas.auth import (
+    CustomOAuth2PasswordRequestForm,
     Token,
     TokenResponseCallbackSchema,
     TokenResponseSchema,
@@ -43,23 +43,23 @@ async def get_current_user(
 
 @router.post("/register")
 async def register_user(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    form_data: CustomOAuth2PasswordRequestForm = Depends(),
 ) -> JSONResponse:  # pylint: disable=W0613
     """
     User registering
 
-    :param OAuth2PasswordRequestForm form_data: Authentication request form
+    :param CustomOAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Auth token obtaining
     """
     return await register(form_data.username, form_data.password)
 
 
 @router.post("/token", response_model=TokenResponseSchema)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> TokenResponseSchema:
+async def login(form_data: CustomOAuth2PasswordRequestForm = Depends()) -> TokenResponseSchema:
     """
     Token for user auth
 
-    :param OAuth2PasswordRequestForm form_data: Authentication request form
+    :param CustomOAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Token obtaining
     """
     return await authenticate_user(
