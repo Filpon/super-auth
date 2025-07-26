@@ -1,9 +1,8 @@
 import os
 from typing import Awaitable, Callable, Optional
 
-from aiokafka.admin import NewTopic
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from slowapi import Limiter
@@ -11,11 +10,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
 from slowapi.util import get_remote_address
 
-from app.brokers.kafka import start_admin_client, start_kafka_producer
 from app.configs.logging import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
-from app.routers import auth, events
+from app.routers import auth, events, kafka
+from app.routers.kafka import kafka_admin, kafka_producer
 from app.services.keycloak import verify_permission, verify_token
 from app.utils.handlers import rate_limit_exceeded_handler
 
@@ -57,6 +56,7 @@ app.include_router(
     tags=["events"],
     dependencies=[Depends(verify_token)],
 )
+app.include_router(kafka.router, prefix="/api/v1/kafka", tags=["kafka"])
 
 # Configure CORS
 origins = ORIGINS.split(sep=",") if ORIGINS else []
@@ -101,56 +101,17 @@ async def startup() -> None:
     async with engine.begin() as connector:
         await connector.run_sync(Base.metadata.create_all)
     logger.info("Database creation was finished")
-    app.state.producer = await start_kafka_producer()
+    await kafka_admin.start()
+    app.state.producer = await kafka_producer.start()
 
 
-@app.post("/send")
-async def send_message(message: str) -> dict[str, str]:
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
     """
-    Sending message to a Kafka topic.
+    Application shutdown
 
-    This asynchronous function takes a message as input, encodes it in UTF-8,
-    and sends it to the specified Kafka topic using the producer.
-
-    :param str message: The message to be sent to the Kafka topic.
-    :return dict: A JSON response indicating the status of the message sending.
     """
-    await app.state.producer.send_and_wait("my_topic", message.encode("utf-8"))
-    return {"message": "Message sent to Kafka"}
-
-
-@app.post("/create_topic")
-async def create_topic(
-    topic_name: str, num_partitions: int = 1, replication_factor: int = 1
-) -> dict[str, str]:
-    """Create a new Kafka topic.
-
-    This endpoint allows you to create a new Kafka topic by providing the topic name,
-    number of partitions, and replication factor.
-
-    :param str topic_name: The name of the topic to create.
-    :param int num_partitions: The number of partitions for the topic (default is 1).
-    :param int replication_factor: The replication factor for the topic (default is 1).
-    :return dict: A message indicating the success of the topic creation.
-    :raises HTTPException: If the topic name is not provided or if there is an error.
-    """
-    if not topic_name:
-        raise HTTPException(status_code=400, detail="Topic name should be provided")
-
-    try:
-        async with start_admin_client() as admin_client:
-            await admin_client.create_topics(
-                [
-                    NewTopic(
-                        name=topic_name,
-                        num_partitions=num_partitions,
-                        replication_factor=replication_factor,
-                    )
-                ]
-            )
-        return {"message": f"Topic '{topic_name}' created successfully."}
-    except Exception as excp:
-        raise HTTPException(status_code=500, detail=str(excp)) from excp
+    await kafka_admin.stop()
 
 
 if __name__ == "__main__":

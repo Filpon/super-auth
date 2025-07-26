@@ -1,0 +1,182 @@
+from contextlib import asynccontextmanager
+
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+from aiokafka.errors import (
+    KafkaError,
+    KafkaTimeoutError,
+    KafkaConnectionError,
+    TopicAlreadyExistsError,
+)
+from fastapi import HTTPException, status
+
+from app.configs.logging import configure_logging_handler
+
+logger = configure_logging_handler()
+
+
+class KafkaAdmin:
+    """
+    Manage Kafka topics using the Kafka Admin Client
+
+    This class provides methods for creation, deleting and listing Kafka topics,
+    as well as to start and stop the Kafka Admin client
+    """
+
+    def __init__(self, bootstrap_servers: str):
+        """
+        Initialize Kafka Admin instance
+
+        :param str bootstrap_servers: Kafka connecting servers
+        """
+        self.bootstrap_servers = bootstrap_servers
+        self.admin_client = None
+
+    async def start(self):
+        """
+        Start active Kafka admin client instance
+
+        """
+        try:
+            self.admin_client = AIOKafkaAdminClient(
+                bootstrap_servers=self.bootstrap_servers
+            )
+            await self.admin_client.start()
+        except KafkaTimeoutError as error:
+            raise HTTPException(
+                status_code=status.HTTP_408_REQUEST_TIMEOUT,
+                detail="Timeout Kafka connection error",
+            ) from error
+        except KafkaConnectionError as error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable connect to Kafka server",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to start Kafka, because of {str(exception)}",
+            ) from exception
+
+    @asynccontextmanager
+    async def start_context_manager(self):
+        """
+        Asynchronous context manager to start the Kafka admin client
+
+        :yield AIOKafkaAdminClient: The Kafka admin client instance
+        """
+        try:
+            self.start()
+            yield self.admin_client
+        except KafkaConnectionError as error:
+            raise HTTPException(
+                status_code=status.HTTP_408_REQUEST_TIMEOUT,
+                detail="Unable connect to Kafka server",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to start Kafka, because of {str(exception)}",
+            ) from exception
+        finally:
+            await self.admin_client.close()
+
+    async def stop(self) -> None:
+        """
+        Stop the Kafka admin client
+
+        """
+        try:
+            if self.admin_client:
+                await self.admin_client.close()
+        except KafkaError as error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Common base broker error - {str(error)}",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(exception),
+            ) from exception
+
+    async def create_topic(
+        self,
+        topic_name: str,
+        num_partitions: int,
+        replication_factor: int,
+    ) -> dict[str, str]:
+        """
+        Creation new Kafka topic
+
+        :param str topic_name: The name of the topic for creation
+        :param int num_partitions: The number of partitions for the topic creation
+        :param int replication_factor: The replication factor for the topic creation
+
+        :return dict: Message indicating the success of the topic creation
+        """
+        try:
+            async with self.start_context_manager() as admin_client:
+                new_topic = NewTopic(
+                    name=topic_name,
+                    num_partitions=num_partitions,
+                    replication_factor=replication_factor,
+                )
+                await admin_client.create_topics([new_topic])
+            return {"message": f"Topic '{topic_name}' was created successfully"}
+        except TopicAlreadyExistsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Topic '{topic_name}' already exists",
+            ) from error
+        except KafkaError as error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Common base broker error for creation topic '{topic_name}' - {str(error)}",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create topic '{topic_name}', because {str(exception)}",
+            ) from exception
+
+    async def delete_topic(self, topic_name: str) -> dict[str, str]:
+        """
+        Deleting Kafka topic
+
+        :param str topic_name: The deleting topic name
+
+        :return dict: Message indicating the success of the topic deleting
+        """
+        try:
+            await self.admin_client.delete_topics([topic_name])
+            return {"message": f"Topic '{topic_name}' was deleted successfully"}
+        except KafkaError as error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Common base broker error for deleting topic '{topic_name}' - {str(error)}",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete topic '{topic_name}', because {str(exception)}",
+            ) from exception
+
+    async def list_topics(self):
+        """
+        Listing all Kafka topics
+
+        """
+        try:
+            topics = await self.admin_client.list_topics()
+            for topic in topics:
+                logger.info(topic)
+        except KafkaError as error:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Common base broker error for topic listing - {str(error)}",
+            ) from error
+        except Exception as exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to list topics, because {str(exception)}",
+            ) from exception
