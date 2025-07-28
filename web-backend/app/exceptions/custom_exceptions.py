@@ -1,5 +1,7 @@
 # exceptions.py
 from fastapi import HTTPException
+from fastapi import status
+
 
 class InvalidCredentialsException(HTTPException):
     """
@@ -11,9 +13,10 @@ class InvalidCredentialsException(HTTPException):
     :param int status_code: The HTTP status code to return (default is 401).
     :param str detail: A message describing the error (default is "Invalid credentials")
     """
+
     def __init__(self) -> None:
         """
         Initializes the InvalidCredentialsException with a 401 status code
         and a detail message indicating invalid credentials.
         """
-        super().__init__(status_code=401, detail="Invalid credentials")
+        super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")

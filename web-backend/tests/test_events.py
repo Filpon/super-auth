@@ -3,6 +3,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi import status
 from httpx import Response
 
 from .conftest import PASSWORD, USER
@@ -10,9 +11,7 @@ from .conftest import PASSWORD, USER
 
 # Example test case using the fixture
 @pytest.mark.anyio
-async def test_create_event(
-    test_client_mock_keycloak
-):
+async def test_create_event(test_client_mock_keycloak):
     """
     Fixture to create a mock Keycloak client and an AsyncClient.
 
@@ -28,9 +27,11 @@ async def test_create_event(
 
     with patch.object(async_client, "post", new_callable=AsyncMock) as mock_post:
         # Substitute the response data and status code
-        mock_post.return_value = Response(status_code=200, json={"message": "success"})
+        mock_post.return_value = Response(
+            status_code=status.HTTP_200_OK, json={"message": "success"}
+        )
 
         # Make a request to the mocked endpoint
         response = await async_client.post("/api/v1/events")
 
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK

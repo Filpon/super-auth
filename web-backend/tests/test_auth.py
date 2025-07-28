@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock, patch
+from fastapi import status
 
 import pytest
 from httpx import AsyncClient, Response
@@ -29,13 +30,15 @@ async def test_sucess_keycloak_auth(
 
     with patch.object(async_client, "post", new_callable=AsyncMock) as mock_get:
         # Substitute the response data and status code
-        mock_get.return_value = Response(status_code=200, json={"message": "success"})
+        mock_get.return_value = Response(
+            status_code=status.HTTP_200_OK, json={"message": "success"}
+        )
 
         # Make a request to the mocked endpoint
         response = await async_client.post("/api/v1/auth/token")
 
         # Assert the status code
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
 
         # Assert the response data
         assert response.json() == {"message": "success"}
@@ -54,14 +57,18 @@ async def test_unsucess_keycloak_auth(
     async_client, mock_keycloak = test_client_mock_keycloak
 
     # Use the mock Keycloak client to get a token
-    token_response = await mock_keycloak.fetch_token(NOT_TESTABLE_USER, NOT_TESTABLE_PASSWORD)
+    token_response = await mock_keycloak.fetch_token(
+        NOT_TESTABLE_USER, NOT_TESTABLE_PASSWORD
+    )
     assert token_response["access_token"] == ACCESS_TOKEN
 
     with patch.object(async_client, "post", new_callable=AsyncMock) as mock_get:
         # Substitute the response data and status code
 
         # Make a request to the mocked endpoint
-        mock_get.return_value = Response(status_code=401, json={"message": "Unsucessful auth"})
+        mock_get.return_value = Response(
+            status_code=status.HTTP_401_UNAUTHORIZED, json={"message": "Unsucessful auth"}
+        )
         response = await async_client.post("/api/v1/auth/token")
         # Assert the status code
-        assert response.status_code == 401
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

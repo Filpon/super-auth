@@ -1,10 +1,11 @@
 # pylint: skip-file
 import os
-from unittest.mock import AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from dotenv import load_dotenv
+from fastapi import status
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -63,7 +64,7 @@ class MockKeycloakOpenID:
         """
         if username == USER and password == PASSWORD:
             return Response(
-                status_code=200,
+                status_code=status.HTTP_200_OK,
                 json={
                     "access_token": ACCESS_TOKEN,
                     "refresh_token": REFRESH_TOKEN,
@@ -71,7 +72,7 @@ class MockKeycloakOpenID:
                 },
             )
         return Response(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             json={
                 "error": "invalid_credentials",
                 "access_token": "",
@@ -96,14 +97,14 @@ class MockKeycloakOpenID:
         """
         if token == ACCESS_TOKEN:
             return Response(
-                status_code=200,
+                status_code=status.HTTP_200_OK,
                 json={
                     "access_token": ACCESS_TOKEN,
                     "refresh_token": REFRESH_TOKEN,
                     "token_type": "bearer",
                 },
             )
-        return Response(status_code=401, json={"error": "token"})
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED, json={"error": "token"})
 
     @classmethod
     def create_event(cls, token: str):
@@ -117,14 +118,14 @@ class MockKeycloakOpenID:
         """
         if token == ACCESS_TOKEN:
             return Response(
-                status_code=200,
+                status_code=status.HTTP_200_OK,
                 json={
                     "name": "string",
                     "date": datetime.now().strftime("%Y-%m-%d"),
                     "client_info": "admin-cli"
                 }
             )
-        return Response(status_code=401, json={"error": "invalid_credentials"})
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED, json={"error": "invalid_credentials"})
 
 
 @pytest.fixture(scope="module")
