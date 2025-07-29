@@ -77,7 +77,7 @@ export default tseslint.config(
     },
     rules: {
       'no-console': 'off',
-      'eqeqeq': 'off',
+      eqeqeq: 'off',
       ...prettierPlugin.configs.recommended.rules,
       ...eslintConfigPrettier.rules,
       'react-refresh/only-export-components': [

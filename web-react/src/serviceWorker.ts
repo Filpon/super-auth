@@ -14,8 +14,11 @@ interface Config {
 export function register(config?: Config) {
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // Provide a fallback for PUBLIC_URL if it's undefined
-    const publicUrl = new URL(process.env.PUBLIC_URL || '', window.location.href);
-    
+    const publicUrl = new URL(
+      process.env.PUBLIC_URL || '',
+      window.location.href,
+    );
+
     if (publicUrl.origin !== window.location.origin) {
       return;
     }
