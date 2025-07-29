@@ -62,26 +62,30 @@ export const Register = () => {
     setPassword(inputPassword);
     // Validate password
     if (inputPassword.trim() === '') {
-        setPasswordError('Password should not be empty');
+      setPasswordError('Password should not be empty');
     } else if (inputPassword.length < 6) {
-        setPasswordError('Password should be at least 6 characters long');
+      setPasswordError('Password should be at least 6 characters long');
     } else if (!passwordRegex.test(inputPassword)) {
-        setPasswordError('Password includes latin letters, numbers and special characters');
+      setPasswordError(
+        'Password includes latin letters, numbers and special characters',
+      );
     } else {
-        setPasswordError('');
+      setPasswordError('');
     }
   };
 
-  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleConfirmPasswordChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const inputConfirmPassword = e.target.value;
     setConfirmPassword(inputConfirmPassword);
     // Validate confirm password
     if (inputConfirmPassword.trim() === '') {
-        setConfirmPasswordError('Please confirm your password');
+      setConfirmPasswordError('Please confirm your password');
     } else if (inputConfirmPassword !== password) {
-        setConfirmPasswordError('Passwords do not match');
+      setConfirmPasswordError('Passwords do not match');
     } else {
-        setConfirmPasswordError('');
+      setConfirmPasswordError('');
     }
   };
 

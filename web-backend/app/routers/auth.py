@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.schemas.auth import (
@@ -43,7 +43,7 @@ async def get_current_user(
 
 @router.post("/register")
 async def register_user(
-    form_data: CustomOAuth2PasswordRequestForm = Depends(),
+    form_data: Annotated[CustomOAuth2PasswordRequestForm, Form()],
 ) -> JSONResponse:  # pylint: disable=W0613
     """
     User registering
@@ -55,7 +55,9 @@ async def register_user(
 
 
 @router.post("/token", response_model=TokenResponseSchema)
-async def login(form_data: CustomOAuth2PasswordRequestForm = Depends()) -> TokenResponseSchema:
+async def login(
+    form_data: Annotated[CustomOAuth2PasswordRequestForm, Form()],
+) -> TokenResponseSchema:
     """
     Token for user auth
 
@@ -158,7 +160,7 @@ async def callback(request: Request) -> TokenResponseCallbackSchema:
 @router.delete("/users/{user_id}", response_description="User deleting")
 async def delete_user_by_id(
     user_id: str,
-    _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"]))
+    _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"])),
 ) -> dict[str, str]:
     """
     Deleting user by ID

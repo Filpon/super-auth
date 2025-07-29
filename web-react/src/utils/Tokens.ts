@@ -100,6 +100,11 @@ export const fetchTokens = async (username: string, password: string) => {
   const response: AxiosResponse = await apiRequest.post(
     '/api/v1/auth/token',
     formData,
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    },
   );
   if (response.status >= 400) {
     const error = await response.data;
@@ -116,6 +121,11 @@ export const handleRegister = async (username: string, password: string) => {
   const response: AxiosResponse = await apiRequest.post(
     '/api/v1/auth/register',
     formData,
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    },
   );
   console.log(response);
   if (response.status >= 200 && response.status < 300) {
