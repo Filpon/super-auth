@@ -1,7 +1,9 @@
 from typing import Any, Sequence
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.brokers.kafka_producer import kafka_producer
 from app.database.db import get_db
 from app.database.models import Event
 from app.database.repository import ModelRepository, ModelType
@@ -32,7 +34,11 @@ async def create_event(
             detail="Event already exists in system",
         )
     event.client_info = user["azp"]
-    return await repository_events.create(obj=event)
+    event_creation_result = await repository_events.create(obj=event)
+    await kafka_producer.send_message(
+        topic="events", message=f"{event.name} was created"
+    )
+    return event_creation_result
 
 
 @router.get("", response_model=list[EventFetchSchema])

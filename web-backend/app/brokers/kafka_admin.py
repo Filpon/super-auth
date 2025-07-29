@@ -1,17 +1,25 @@
+import os
 from contextlib import asynccontextmanager
+from typing import Final
 
 from aiokafka.admin import AIOKafkaAdminClient, NewTopic
 from aiokafka.errors import (
+    KafkaConnectionError,
     KafkaError,
     KafkaTimeoutError,
-    KafkaConnectionError,
     TopicAlreadyExistsError,
 )
+from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
 from app.configs.logging import configure_logging_handler
 
 logger = configure_logging_handler()
+
+load_dotenv()
+
+KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
+KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
 
 
 class KafkaAdmin:
@@ -65,7 +73,7 @@ class KafkaAdmin:
         :yield AIOKafkaAdminClient: The Kafka admin client instance
         """
         try:
-            self.start()
+            await self.start()
             yield self.admin_client
         except KafkaConnectionError as error:
             raise HTTPException(
@@ -102,8 +110,8 @@ class KafkaAdmin:
     async def create_topic(
         self,
         topic_name: str,
-        num_partitions: int,
-        replication_factor: int,
+        num_partitions: int = 1,
+        replication_factor: int = 1,
     ) -> dict[str, str]:
         """
         Creation new Kafka topic
@@ -180,3 +188,6 @@ class KafkaAdmin:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to list topics, because {str(exception)}",
             ) from exception
+
+
+kafka_admin = KafkaAdmin(bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}")

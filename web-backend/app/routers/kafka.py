@@ -4,9 +4,8 @@ from typing import Final
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, status
 
-from app.brokers.kafka_admin import KafkaAdmin
-from app.brokers.kafka_producer import KafkaProducer
-from app.configs.logging import configure_logging_handler
+from app.brokers.kafka_admin import kafka_admin
+from app.brokers.kafka_producer import kafka_producer
 from app.schemas.kafka import CreateTopicRequest, SendingKafkaMessage
 
 load_dotenv()
@@ -15,12 +14,6 @@ KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
 KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
 
 router = APIRouter()
-logger = configure_logging_handler()
-
-kafka_admin = KafkaAdmin(bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}")
-kafka_producer = KafkaProducer(
-    bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}", topic="auth"
-)
 
 
 @router.post("/send")

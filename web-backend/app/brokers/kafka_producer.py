@@ -1,14 +1,23 @@
+import os
+from typing import Final
+
 from aiokafka import AIOKafkaProducer
 from aiokafka.errors import (
     KafkaConnectionError,
     KafkaError,
     KafkaTimeoutError,
 )
+from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
 from app.configs.logging import configure_logging_handler
 
 logger = configure_logging_handler()
+
+load_dotenv()
+
+KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
+KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
 
 
 class KafkaProducer:
@@ -97,3 +106,8 @@ class KafkaProducer:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(exception),
             ) from exception
+
+
+kafka_producer = KafkaProducer(
+    bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}", topic="events"
+)

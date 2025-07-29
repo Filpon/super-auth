@@ -10,11 +10,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
 from slowapi.util import get_remote_address
 
+from app.brokers.kafka_admin import kafka_admin
+from app.brokers.kafka_producer import kafka_producer
 from app.configs.logging import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
 from app.routers import auth, events, kafka
-from app.routers.kafka import kafka_admin, kafka_producer
 from app.services.keycloak import verify_permission, verify_token
 from app.utils.handlers import rate_limit_exceeded_handler
 
@@ -103,6 +104,9 @@ async def startup() -> None:
     logger.info("Database creation was finished")
     await kafka_admin.start()
     app.state.producer = await kafka_producer.start()
+    await kafka_admin.create_topic(
+        topic_name="events",
+    )
 
 
 @app.on_event("shutdown")
