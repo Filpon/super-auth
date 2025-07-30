@@ -1,6 +1,6 @@
-import os
-from logging import INFO, Formatter, Logger, getLogger, StreamHandler
+from logging import INFO, Formatter, Logger, StreamHandler, getLogger
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Final
 
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ load_dotenv()
 
 # Configure logging
 LOG_LEVEL: Final[int] = INFO
-LOG_FILE: Final[str] = os.getenv("LOG_FILE", "/app/app/logs/logfile.log")
+LOG_FILE: Final[str] = Path(__file__).resolve().parent.parent / "logs" / "logfile.log"
 MAX_BYTES: Final[int] = (
     5 * 1024 * 1024
 )  # Maximum file size in bytes before rotation - currently 5 MB

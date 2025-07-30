@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 
 from app.brokers.kafka_admin import kafka_admin
 from app.brokers.kafka_producer import kafka_producer
-from app.configs.logging import configure_logging_handler
+from app.configs.logging_handler import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
 from app.routers import auth, events, kafka

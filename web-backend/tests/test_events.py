@@ -11,7 +11,7 @@ from .conftest import PASSWORD, USER
 
 # Example test case using the fixture
 @pytest.mark.anyio
-async def test_create_event(test_client_mock_keycloak):
+async def test_create_event(client_mock_keycloak):
     """
     Fixture to create a mock Keycloak client and an AsyncClient.
 
@@ -19,7 +19,7 @@ async def test_create_event(test_client_mock_keycloak):
         Tuple[AsyncClient, MockKeycloakOpenID]: A tuple containing the
         AsyncClient and the mock Keycloak client.
     """
-    async_client, mock_keycloak = test_client_mock_keycloak
+    async_client, mock_keycloak = client_mock_keycloak
 
     # Use the mock Keycloak client to get a token
     token_response = await mock_keycloak.create_event(USER, PASSWORD)

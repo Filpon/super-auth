@@ -10,7 +10,7 @@ from aiokafka.errors import (
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
-from app.configs.logging import configure_logging_handler
+from app.configs.logging_handler import configure_logging_handler
 
 logger = configure_logging_handler()
 

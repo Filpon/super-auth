@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, patch
-from fastapi import status
 
 import pytest
+from fastapi import status
 from httpx import AsyncClient, Response
 
 from .conftest import ACCESS_TOKEN, PASSWORD, USER, MockKeycloakOpenID
@@ -13,7 +13,7 @@ NOT_TESTABLE_USER, NOT_TESTABLE_PASSWORD = generate_test_credentials()
 # Example test case using the fixture
 @pytest.mark.anyio
 async def test_sucess_keycloak_auth(
-    test_client_mock_keycloak: tuple[AsyncClient, MockKeycloakOpenID],
+    client_mock_keycloak: tuple[AsyncClient, MockKeycloakOpenID],
 ):
     """
     Test to create a mock Keycloak client and an AsyncClient.
@@ -22,7 +22,7 @@ async def test_sucess_keycloak_auth(
         Tuple[AsyncClient, MockKeycloakOpenID]: A tuple containing the
         AsyncClient and the mock Keycloak client.
     """
-    async_client, mock_keycloak = test_client_mock_keycloak
+    async_client, mock_keycloak = client_mock_keycloak
 
     # Use the mock Keycloak client to get a token
     token_response = await mock_keycloak.fetch_token(USER, PASSWORD)
@@ -46,7 +46,7 @@ async def test_sucess_keycloak_auth(
 
 @pytest.mark.anyio
 async def test_unsucess_keycloak_auth(
-    test_client_mock_keycloak: tuple[AsyncClient, MockKeycloakOpenID],
+    client_mock_keycloak: tuple[AsyncClient, MockKeycloakOpenID],
 ):
     """Test to create a mock Keycloak client and an AsyncClient.
 
@@ -54,7 +54,7 @@ async def test_unsucess_keycloak_auth(
         Tuple[AsyncClient, MockKeycloakOpenID]: A tuple containing the
         AsyncClient and the mock Keycloak client.
     """
-    async_client, mock_keycloak = test_client_mock_keycloak
+    async_client, mock_keycloak = client_mock_keycloak
 
     # Use the mock Keycloak client to get a token
     token_response = await mock_keycloak.fetch_token(
@@ -67,7 +67,8 @@ async def test_unsucess_keycloak_auth(
 
         # Make a request to the mocked endpoint
         mock_get.return_value = Response(
-            status_code=status.HTTP_401_UNAUTHORIZED, json={"message": "Unsucessful auth"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            json={"message": "Unsucessful auth"},
         )
         response = await async_client.post("/api/v1/auth/token")
         # Assert the status code

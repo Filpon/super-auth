@@ -37,6 +37,7 @@ services:
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     environment:
+      BACKEND_PORT: ${BACKEND_PORT}
       PYTHONPATH: /app
       KAFKA_HOSTNAME: ${KAFKA_HOSTNAME}
       KAFKA_PORT: ${KAFKA_PORT}
@@ -182,7 +183,6 @@ services:
 
   zookeeper:
     image: bitnami/zookeeper:${ZOOKEEPER_VERSION}
-    container_name: 'zookeeper'
     ports:
       - ${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}
     environment:

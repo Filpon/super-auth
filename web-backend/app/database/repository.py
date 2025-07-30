@@ -3,7 +3,7 @@ from typing import Any, Generic, Sequence, TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.configs.logging import configure_logging_handler
+from app.configs.logging_handler import configure_logging_handler
 from app.database.models import Base
 
 logger = configure_logging_handler()

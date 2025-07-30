@@ -29,7 +29,9 @@ async def test_get_db():
     mock_session = AsyncMock(spec=AsyncSession)
 
     # Patching AsyncSessionLocal for mock
-    with patch('app.database.db.ASYNC_SESSION_LOCAL', return_value=mock_session) as mock_database:
+    with patch(
+        "app.database.db.ASYNC_SESSION_LOCAL", return_value=mock_session
+    ) as mock_database:
         mock_database.config = "mocked_config"
         async_generator = get_db()
         session = await anext(async_generator)  # Generator session obtaining

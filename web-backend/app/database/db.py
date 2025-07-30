@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.configs.logging import configure_logging_handler
+from app.configs.logging_handler import configure_logging_handler
 
 load_dotenv()
 logger = configure_logging_handler()

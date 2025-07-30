@@ -1,12 +1,14 @@
 # pylint: skip-file
 import os
+import time
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from dotenv import load_dotenv
 from fastapi import status
-from httpx import AsyncClient, Response
+from httpx import AsyncClient, ConnectError, Response
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.database.models import Base
@@ -18,6 +20,7 @@ from .data_generating_testing import (
 
 load_dotenv()
 
+BACKEND_PORT = os.getenv("BACKEND_PORT")
 DATABASE_URL = os.getenv("DATABASE_URL")
 REACT_APP_BACKEND_URL = os.getenv("REACT_APP_BACKEND_URL")
 REACT_APP_DOMAIN_NAME = os.getenv("REACT_APP_DOMAIN_NAME")
@@ -104,7 +107,9 @@ class MockKeycloakOpenID:
                     "token_type": "bearer",
                 },
             )
-        return Response(status_code=status.HTTP_401_UNAUTHORIZED, json={"error": "token"})
+        return Response(
+            status_code=status.HTTP_401_UNAUTHORIZED, json={"error": "token"}
+        )
 
     @classmethod
     def create_event(cls, token: str):
@@ -122,16 +127,23 @@ class MockKeycloakOpenID:
                 json={
                     "name": "string",
                     "date": datetime.now().strftime("%Y-%m-%d"),
-                    "client_info": "admin-cli"
-                }
+                    "client_info": "admin-cli",
+                },
             )
-        return Response(status_code=status.HTTP_401_UNAUTHORIZED, json={"error": "invalid_credentials"})
+        return Response(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            json={"error": "invalid_credentials"},
+        )
 
 
 @pytest.fixture(scope="module")
 async def setup_database():
     """
-    Database connection async fixture
+    Fixture for setting up and shutting down database
+
+    This fixture creates database connection and initializes database
+    schema before the tests in the module run. It also ensures that the
+    database schema is dropped after the tests are completed
     """
     engine = create_async_engine(
         url=DATABASE_URL, echo=True, connect_args={"check_same_thread": False}
@@ -144,16 +156,16 @@ async def setup_database():
 
 
 @pytest.fixture
-async def test_client_mock_keycloak():
+async def client_mock_keycloak():
     """
-     Fixture that provides an AsyncClient for testing with a mock Keycloak server.
+    Fixture that provides AsyncClient for testing with mock Keycloak container
 
-     This fixture initializes an AsyncClient before the test and ensures
-     that it is properly closed after the test is completed.
+    This fixture initializes AsyncClient before the test and ensures
+    that it is properly finished after the test is completed
 
-    :return: An instance of AsyncClient configured for testing.
+    :return: The instance of AsyncClient configured for testing
     """
-    # Base URL for the mock Keycloak server
+    # Base URL for the mock Keycloak container
     base_url = BASE_URL
     # Create an instance of the mock Keycloak client
     mock_keycloak = MockKeycloakOpenID(base_url)
@@ -192,21 +204,74 @@ async def test_client_mock_keycloak():
             mock_create_event.return_value = {
                 "name": "string",
                 "date": datetime.now().strftime("%Y-%m-%d"),
-                "client_info": "admin-cli"
+                "client_info": "admin-cli",
             }
 
-
             yield client, mock_keycloak
+
+
+async def is_responsive(url):
+    """
+    Check if the input URL is responsive
+
+    :param str url: The URL for responsiveness check
+
+    :return bool: True if the response status code is successful, False otherwise
+    """
+    try:
+        async with AsyncClient() as client:
+            response = await client.get(url=url)
+            if response.status_code == status.HTTP_200_OK:
+                return True
+    except ConnectError:
+        return False
+
+
+@pytest.fixture(scope="session")
+def docker_compose_file(pytestconfig):
+    """
+    Fixture that provides the path to the Docker Compose file
+
+    :param pytestconfig pytestconfig: The pytest configuration object
+
+    :return Path: The path to the Docker Compose file
+    """
+    return Path(pytestconfig.rootdir).parent / "compose.yml"
+
+
+@pytest.fixture(scope="function")
+async def backend_container_runner(docker_ip, docker_services):
+    """
+    Fixture that ensures the backend container is up and responsive
+
+    This fixture waits until the HTTP service is responsive and yields
+    AsyncClient instance for making requests to the service
+
+    :param str docker_ip: The IP address of the Docker service
+    :param docker_services docker_services: The Docker services fixture
+
+    :yield AsyncClient: An AsyncClient instance for the backend service
+    """
+    try:
+        BACKEND_PORT_VALUE = int(BACKEND_PORT)
+    except ValueError as excp:
+        raise ValueError("Converting value to integer error") from excp
+
+    port = docker_services.port_for("backend", BACKEND_PORT_VALUE)
+    url = f"http://{docker_ip}:{port}"
+    docker_services.wait_until_responsive(
+        timeout=310, pause=0.1, check=lambda: is_responsive(url=url)
+    )
+    async with AsyncClient(base_url=url) as client:
+        time.sleep(7)
+        yield client
 
 
 @pytest.fixture
 def current_access_token():
     """
-     Fixture that provides an AsyncClient for testing with a mock Keycloak server.
+    Fixture that provides access token for Keycloak container
 
-     This fixture initializes an AsyncClient before the test and ensures
-     that it is properly closed after the test is completed.
-
-    :return: An instance of AsyncClient configured for testing.
+    :return str ACCESS_TOKEN: Access token
     """
     return ACCESS_TOKEN
