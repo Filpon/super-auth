@@ -1,9 +1,10 @@
 from typing import Any, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_cache.decorator import cache
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.brokers.kafka_producer import kafka_producer
+from app.brokers.kafka_producer import get_producer
 from app.database.db import get_db
 from app.database.models import Event
 from app.database.repository import ModelRepository, ModelType
@@ -18,6 +19,7 @@ async def create_event(
     event: EventCreateSchema,
     user: dict[str, Any] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    producer=Depends(get_producer),
 ) -> EventCreateSchema | Any:
     """
     Event creation for authenticated user
@@ -35,13 +37,12 @@ async def create_event(
         )
     event.client_info = user["azp"]
     event_creation_result = await repository_events.create(obj=event)
-    await kafka_producer.send_message(
-        topic="events", message=f"{event.name} was created"
-    )
+    await producer.send_message(topic="events", message=f"{event.name} was created")
     return event_creation_result
 
 
 @router.get("", response_model=list[EventFetchSchema])
+@cache(expire=60)
 async def fetch_events(
     user: dict[str, Any] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

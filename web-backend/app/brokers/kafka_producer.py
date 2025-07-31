@@ -8,7 +8,7 @@ from aiokafka.errors import (
     KafkaTimeoutError,
 )
 from dotenv import load_dotenv
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 
 from app.configs.logging_handler import configure_logging_handler
 
@@ -50,6 +50,7 @@ class KafkaProducer:
                 bootstrap_servers=self.bootstrap_servers,
             )
             await self.producer.start()
+            return self.producer
         except KafkaTimeoutError as error:
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
@@ -96,6 +97,7 @@ class KafkaProducer:
         try:
             if self.producer:
                 await self.producer.stop()
+            return self.producer()
         except KafkaError as error:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -106,6 +108,21 @@ class KafkaProducer:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(exception),
             ) from exception
+
+
+async def get_producer(request: Request):
+    """
+    Dependency function to retrieve the Kafka producer from the FastAPI application state
+
+    This function accesses the application state to obtain the Kafka producer instance,
+    which can be used in route handlers for sending messages to Kafka topics
+
+    :param Request request: The FastAPI request object, which provides access
+    to the application state
+
+    :returns: The Kafka producer instance stored in the application state
+    """
+    return request.app.state.producer
 
 
 kafka_producer = KafkaProducer(

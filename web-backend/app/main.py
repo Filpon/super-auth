@@ -12,6 +12,7 @@ from slowapi.util import get_remote_address
 
 from app.brokers.kafka_admin import kafka_admin
 from app.brokers.kafka_producer import kafka_producer
+from app.cache.keydb import cache_span
 from app.configs.logging_handler import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
@@ -71,6 +72,33 @@ app.add_middleware(
 )
 
 
+# Database creation
+@app.on_event("startup")
+async def startup() -> None:
+    """
+    Starting database creation
+
+    """
+    async with cache_span(app):
+        async with engine.begin() as connector:
+            await connector.run_sync(Base.metadata.create_all)
+        logger.info("Database creation was finished")
+        await kafka_producer.start()
+        app.state.producer = kafka_producer
+        await kafka_admin.create_topic(
+            topic_name="events",
+        )
+
+
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    """
+    Application shutdown
+
+    """
+    await app.state.producer.stop()
+
+
 @app.get("/check")
 async def root() -> Response:
     """
@@ -90,32 +118,6 @@ def call_admin(user: str = Depends(verify_permission(required_roles=["admin"])))
     :returns string: Messager for admin user
     """
     return f"Hello, admin {user}"
-
-
-# Database creation
-@app.on_event("startup")
-async def startup() -> None:
-    """
-    Starting database creation
-
-    """
-    async with engine.begin() as connector:
-        await connector.run_sync(Base.metadata.create_all)
-    logger.info("Database creation was finished")
-    await kafka_admin.start()
-    app.state.producer = await kafka_producer.start()
-    await kafka_admin.create_topic(
-        topic_name="events",
-    )
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """
-    Application shutdown
-
-    """
-    await kafka_admin.stop()
 
 
 if __name__ == "__main__":

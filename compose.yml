@@ -53,6 +53,7 @@ services:
       KC_CLIENT_SECRET_KEY: ${KC_CLIENT_SECRET_KEY}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYDB_PORT: ${KEYDB_PORT}
       KC_REALM_COMMON_CLIENT: ${KC_REALM_COMMON_CLIENT}
       KC_REALM_COMMON_USER: ${KC_REALM_COMMON_USER}
       KC_REALM_COMMON_USER_PASSWORD: ${KC_REALM_COMMON_USER_PASSWORD}
@@ -162,6 +163,16 @@ services:
         target: /var/lib/postgresql/data
         tmpfs:
           size: 100000000
+
+  keydb:
+    image: eqalpha/keydb:latest
+    ports:
+      - "${KEYDB_PORT}:${KEYDB_PORT}"  # Expose KeyDB on port 6379
+    environment:
+      - KEYDB_PASSWORD=${KEYDB_PASSWORD}  # Set password for KeyDB
+    command: ["keydb-server", "--requirepass", "${KEYDB_PASSWORD}"]
+    networks:
+      - keycloak-network
 
   kafka:
     image: bitnami/kafka:${KAFKA_VERSION}

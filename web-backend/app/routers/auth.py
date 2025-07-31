@@ -2,6 +2,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi_cache.decorator import cache
 
 from app.schemas.auth import (
     CustomOAuth2PasswordRequestForm,
@@ -124,6 +125,7 @@ async def generate_auth() -> RedirectResponse:
 
 
 @router.get("/users")
+@cache(expire=60)
 async def fetch_all_users(
     _: dict[str, Any] = Depends(verify_permission(required_roles=["admin"])),
 ) -> dict[str, list[dict[str, Any]]]:
