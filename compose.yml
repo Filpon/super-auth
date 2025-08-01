@@ -169,7 +169,7 @@ services:
     ports:
       - "${KEYDB_PORT}:${KEYDB_PORT}"  # Expose KeyDB on port 6379
     environment:
-      - KEYDB_PASSWORD=${KEYDB_PASSWORD}  # Set password for KeyDB
+      KEYDB_PASSWORD: ${KEYDB_PASSWORD}  # Set password for KeyDB
     command: ["keydb-server", "--requirepass", "${KEYDB_PASSWORD}"]
     networks:
       - keycloak-network
