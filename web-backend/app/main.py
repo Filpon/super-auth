@@ -16,6 +16,7 @@ from app.caches.keydb import cache_span
 from app.configs.logging_handler import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
+from app.middlewares.logging_middleware import LoggingMiddleware
 from app.routers import auth, events, kafka
 from app.services.keycloak import verify_permission, verify_token
 from app.utils.handlers import rate_limit_exceeded_handler
@@ -28,7 +29,8 @@ ORIGINS: Optional[str] = os.getenv("ORIGINS", "")
 # FastAPI app creation
 app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
 limiter = Limiter(key_func=get_remote_address, application_limits=["3/5seconds"])
-app.add_middleware(SlowAPIASGIMiddleware)
+app.add_middleware(middleware_class=SlowAPIASGIMiddleware)
+app.add_middleware(middleware_class=LoggingMiddleware)
 app.state.limiter = limiter
 
 
