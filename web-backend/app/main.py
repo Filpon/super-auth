@@ -117,7 +117,7 @@ def call_admin(user: str = Depends(verify_permission(required_roles=["admin"])))
     :param list required_roles: Role admin for calling
     :returns string: Messager for admin user
     """
-    return f"Hello, admin {user}"
+    return f"Hello, admin {user['preferred_username']}"
 
 
 if __name__ == "__main__":
