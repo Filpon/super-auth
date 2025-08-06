@@ -205,4 +205,4 @@ async def logout_user(token: Token) -> dict[str, Any]:
 
     :param str token: Token refreshing from Keycloak
     """
-    return await logout(token.token)
+    return await logout(token=token.token)

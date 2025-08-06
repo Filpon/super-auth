@@ -25,7 +25,7 @@ export const logout = async () => {
   clearTokens();
 
   await apiRequest.post(
-    '/api/v1/auth/refresh',
+    '/api/v1/auth/logout',
     JSON.stringify({ token: refreshToken }),
     {
       headers: {
