@@ -108,6 +108,7 @@ async def root() -> Response:
 
     :returns Response: Response with sucessful status code
     """
+    logger.info("Route availability check")
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -119,6 +120,7 @@ def call_admin(user: str = Depends(verify_permission(required_roles=["admin"])))
     :param list required_roles: Role admin for calling
     :returns string: Messager for admin user
     """
+    logger.info("Admin route availability check")
     return f"Hello, admin {user['preferred_username']}"
 
 

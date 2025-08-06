@@ -6,7 +6,10 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.brokers.kafka_admin import kafka_admin
 from app.brokers.kafka_producer import kafka_producer
+from app.configs.logging_handler import configure_logging_handler
 from app.schemas.kafka import CreateTopicRequest, SendingKafkaMessage
+
+logger = configure_logging_handler()
 
 load_dotenv()
 
@@ -36,8 +39,8 @@ async def send_message(request: SendingKafkaMessage) -> dict[str, str]:
     topic = request.topic
     message = request.message
     await kafka_producer.send_message(topic=topic, message=message)
-
-    return {"message": f"Message sent to Kafka topic {topic}"}
+    logger.info("Message was sent to Kafka topic '%s'", topic)
+    return {"message": f"Message was sent to Kafka topic '{topic}'"}
 
 
 @router.post("/create/topic")
@@ -69,5 +72,5 @@ async def create_topic(request: CreateTopicRequest) -> dict[str, str]:
         num_partitions=num_partitions,
         replication_factor=replication_factor,
     )
-
+    logger.info("Topic '%s' was created", topic_name)
     return {"message": f"Topic '{topic_name}' was created"}

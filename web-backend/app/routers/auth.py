@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi_cache.decorator import cache
 
+from app.configs.logging_handler import configure_logging_handler
 from app.schemas.auth import (
     CustomOAuth2PasswordRequestForm,
     Token,
@@ -27,6 +28,8 @@ from app.services.keycloak import (
     verify_permission,
     verify_token,
 )
+
+logger = configure_logging_handler()
 
 router = APIRouter()
 
@@ -52,7 +55,9 @@ async def register_user(
     :param CustomOAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Auth token obtaining
     """
-    return await register(form_data.username, form_data.password)
+    register_user_result = await register(form_data.username, form_data.password)
+    logger.info("User '%s' was registered successfully", form_data.username)
+    return register_user_result
 
 
 @router.post("/token", response_model=TokenResponseSchema)
@@ -65,9 +70,11 @@ async def login(
     :param CustomOAuth2PasswordRequestForm form_data: Authentication request form
     :returns dict token: Token obtaining
     """
-    return await authenticate_user(
+    authenticate_user_result = await authenticate_user(
         username=form_data.username, password=form_data.password
     )
+    logger.info("User '%s' token obtaining was successful", form_data.username)
+    return authenticate_user_result
 
 
 @router.get("/protected")
@@ -82,6 +89,7 @@ async def protected_route(_: Token = Depends(verify_token)) -> dict[str, str]:
 
     :return Dict: Response containing message indicating access to the protected route.
     """
+    logger.info("Protected route successful connection")
     return {"message": "This is the protected route"}
 
 
@@ -98,7 +106,9 @@ async def introspect(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     :return Dict: The result of the token introspection, which may include token
     validity and associated features.
     """
-    return await introspect_token(token=token)
+    introspect_token_result = await introspect_token(token=token)
+    logger.info("Token information introspection was completed")
+    return introspect_token_result
 
 
 @router.post("/refresh", response_model=TokenResponseSchema)
@@ -110,7 +120,9 @@ async def refresh(token: Token) -> TokenResponseSchema:
 
     :returns dict new_token: New token after refreshing
     """
-    return await refresh_token(token=token.token)
+    refresh_token_result = await refresh_token(token=token.token)
+    logger.info("Token refresh was successful")
+    return refresh_token_result
 
 
 @router.get("/generate-auth")
@@ -137,7 +149,9 @@ async def fetch_all_users(
     :param _ dict: A dictionary containing the request context, used for permission verification
     :returns dict[str, list[dict[str, Any]]]: List of users dictionaries
     """
-    return await fetch_users()
+    fetch_users_result = await fetch_users()
+    logger.info("Fetching users was successful")
+    return fetch_users_result
 
 
 @router.get("/callback")
@@ -172,7 +186,8 @@ async def delete_user_by_id(
     :returns: A message indicating the result of the deletion
     """
     await delete_user(user_id=user_id)
-    return {"message": f"User with ID {user_id} has been deleted."}
+    logger.info("User with ID %s was deleted", user_id)
+    return {"message": f"User with ID {user_id} was deleted"}
 
 
 @router.put("/users/{user_id}", response_description="User updating")
@@ -195,7 +210,8 @@ async def update_user_by_id(
         ]
     }
     await update_user(user_id=user_id, user_data=user_data)
-    return {"message": f"User with ID {user_id} has been updated."}
+    logger.info("User with ID %s was updated", user_id)
+    return {"message": f"User with ID {user_id} was updated"}
 
 
 @router.post("/logout")
@@ -205,4 +221,6 @@ async def logout_user(token: Token) -> dict[str, Any]:
 
     :param str token: Token refreshing from Keycloak
     """
-    return await logout(token=token.token)
+    logout_result = await logout(token=token.token)
+    logger.info("Logout was successful")
+    return logout_result
