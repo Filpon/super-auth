@@ -17,9 +17,12 @@ from keycloak.exceptions import (
 )
 from keycloak.keycloak_openid import KeycloakOpenID
 
+from app.configs.logging_handler import configure_logging_handler
 from app.schemas.auth import TokenResponseCallbackSchema, TokenResponseSchema
 
 load_dotenv()
+
+logger = configure_logging_handler()
 
 REALM = "master"
 
@@ -86,23 +89,26 @@ async def register(username: str, password: str) -> JSONResponse:
         user_id = await keycloak_admin.a_create_user(payload=user_data)
 
         if user_id is None:
+            logger.error("User %s was registered unsuccessfully", username)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"User {username} registered unsuccessfully",
             )
 
         return JSONResponse(
-            content={"message": f"User {username} registered successfully"},
+            content={"message": f"User {username} was registered successfully"},
             status_code=status.HTTP_201_CREATED,
         )
 
     except KeycloakConnectionError as error:
+        logger.exception("Connection to Keycloak error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Connection to Keycloak error - {str(error.error_message)}",
         ) from error
 
     except KeycloakAuthenticationError as error:
+        logger.exception("Error user credentials - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Error user credentials - {str(error.error_message)}",
@@ -119,17 +125,21 @@ async def register(username: str, password: str) -> JSONResponse:
         ):
             error_content = "Realm does not exist"
             status_code = status.HTTP_401_UNAUTHORIZED
+            logger.exception(error_content)
         elif (
             "user" in error_message_text_lower and "exists" in error_message_text_lower
         ):
             error_content = f"Username {username} already exists"
             status_code = status.HTTP_409_CONFLICT
+            logger.exception("Username %s already exists", username)
         else:
             error_content = f"Keycloak Post Error - {str(error.error_message)}"
+            logger.exception("Keycloak Post Error - %s", error.error_message)
 
         raise HTTPException(detail=error_content, status_code=status_code) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{str(exception)} - {exception.__class__}",
@@ -163,6 +173,7 @@ async def authenticate_user(username: str, password: str) -> TokenResponseSchema
             "user" in error_message_text_lower
             and "credentials" in error_message_text_lower
         ):
+            logger.exception("Error user credentials")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Error user credentials",
@@ -171,15 +182,20 @@ async def authenticate_user(username: str, password: str) -> TokenResponseSchema
             "client" in error_message_text_lower
             and "credentials" in error_message_text_lower
         ):
+            logger.exception("Error client credentials")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Error client credentials",
             ) from error
+        logger.exception("Credentials error")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Credentials error"
         ) from error
 
     except KeycloakConnectionError as error:
+        logger.exception(
+            "Connection to Keycloak container error - %s", error.error_message
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Connection to Keycloak container error - {str(error.error_message)}",
@@ -191,15 +207,18 @@ async def authenticate_user(username: str, password: str) -> TokenResponseSchema
             "realm" in error_message_text_lower
             and "not exists" in error_message_text_lower
         ):
+            logger.exception("Realm does not exist")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
             ) from error
+        logger.exception("Keycloak Get Error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Keycloak Get Error - {str(error.error_message)}",
         ) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{str(exception)} - {exception.__class__}",
@@ -238,6 +257,7 @@ def verify_permission(
             user_groups = token_info.get("groups", [])
             for role in required_roles:
                 if role not in user_groups:
+                    logger.error("Role %s is required to perform this action", role)
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"Role '{role}' is required to perform this action",
@@ -245,11 +265,13 @@ def verify_permission(
 
             return token_info
         except JWTExpired as error:
+            logger.exception("Token period expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token period expired",
             ) from error
         except (KeycloakGetError, JWTError) as error:
+            logger.exception("Error - %s", error)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=str(error),
@@ -260,10 +282,12 @@ def verify_permission(
                 and hasattr(exception, "status_code")
                 and hasattr(exception, "detail")
             ):
+                logger.exception("Error - %s", exception.detail)
                 raise HTTPException(
                     status_code=exception.status_code,
                     detail=exception.detail,
                 ) from exception
+            logger.exception("Error - %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"{str(exception)} - {exception.__class__}",
@@ -301,21 +325,27 @@ async def refresh_token(token: str) -> TokenResponseSchema:
             "refresh" in error_message_text_lower
             and "token" in error_message_text_lower
         ):
+            logger.exception("Error refresh token value")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Error refresh token value",
             ) from error
+        logger.exception("Credentials error")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Credentials error"
         ) from error
 
     except KeycloakConnectionError as error:
+        logger.exception(
+            "Connection to Keycloak container error - %s", error.error_message
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Connection to Keycloak container error - {str(error.error_message)}",
         ) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{str(exception)} - {exception.__class__}",
@@ -331,25 +361,28 @@ async def verify_token(token: str = Depends(oauth2_scheme)) -> dict[Any, Any] | 
     try:
         return await keycloak_openid.a_decode_token(token=token)
     except JWTExpired as error:
+        logger.exception("Token period expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token period expired",
         ) from error
 
     except InvalidJWSSignature as error:
+        logger.exception("Error - %s", error)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(error),
         ) from error
 
     except InvalidJWSObject as error:
-        print(f"JWS{error=}")
+        logger.exception("Error - %s", error)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Error token format",
         ) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{str(exception)} - {exception.__class__}",
@@ -366,6 +399,7 @@ async def introspect_token(token: str) -> dict[str, Any] | Any:
         token_info = await keycloak_openid.a_introspect(token=token)
 
         if not token_info.get("active"):
+            logger.error("Token is not active")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is not active"
             )
@@ -379,10 +413,12 @@ async def introspect_token(token: str) -> dict[str, Any] | Any:
             and hasattr(exception, "status_code")
             and hasattr(exception, "detail")
         ):
+            logger.exception("Error - %s", exception.detail)
             raise HTTPException(
                 status_code=exception.status_code,
                 detail=exception.detail,
             ) from exception
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{exception.__class__}",
@@ -412,11 +448,13 @@ async def fetch_userinfo_via_token(
     try:
         return await keycloak_openid.a_decode_token(token=token)
     except KeycloakGetError as error:
+        logger.exception("Error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(error.error_message),
         ) from error
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exception),
@@ -446,6 +484,7 @@ async def fetch_callback(
         # Here you can store the tokens in a session or database as needed
         return TokenResponseCallbackSchema(**token_callback_response)
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exception),
@@ -462,6 +501,7 @@ async def fetch_users() -> dict[str, list[dict[str, Any]]]:
         users_response_result: list[dict[str, Any]] = await keycloak_admin.a_get_users()
         return {"users": users_response_result}
     except KeycloakAuthenticationError as error:
+        logger.exception("Error user credentials - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Error user credentials - {str(error.error_message)}",
@@ -473,15 +513,18 @@ async def fetch_users() -> dict[str, list[dict[str, Any]]]:
             "realm" in error_message_text_lower
             and "not exists" in error_message_text_lower
         ):
+            logger.exception("Realm does not exist")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
             ) from error
+        logger.exception("Keycloak Post Error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Keycloak Post Error - {str(error.error_message)}",
         ) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{exception.__class__}",
@@ -498,6 +541,7 @@ async def delete_user(user_id: str) -> None:
     try:
         await keycloak_admin.a_delete_user(user_id=user_id)
     except KeycloakAuthenticationError as error:
+        logger.exception("Error user credentials - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Error user credentials - {str(error.error_message)}",
@@ -509,15 +553,18 @@ async def delete_user(user_id: str) -> None:
             "realm" in error_message_text_lower
             and "not exists" in error_message_text_lower
         ):
+            logger.exception("Realm does not exist")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
             ) from error
+        logger.exception("Keycloak Post Error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Keycloak Post Error - {str(error.error_message)}",
         ) from error
 
     except Exception as exception:
+        logger.exception("Keycloak Post Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{exception.__class__}",
@@ -535,6 +582,7 @@ async def update_user(user_id: str, user_data: dict[str, Any]) -> None:
     try:
         await keycloak_admin.a_update_user(user_id=user_id, payload=user_data)
     except KeycloakAuthenticationError as error:
+        logger.exception("Error user credentials - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Error user credentials - {str(error.error_message)}",
@@ -546,15 +594,18 @@ async def update_user(user_id: str, user_data: dict[str, Any]) -> None:
             "realm" in error_message_text_lower
             and "not exists" in error_message_text_lower
         ):
+            logger.exception("Realm does not exist")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Realm does not exist"
             ) from error
+        logger.exception("Keycloak Post Error - %s", error.error_message)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Keycloak Post Error - {str(error.error_message)}",
         ) from error
 
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{exception.__class__}",
@@ -572,11 +623,13 @@ async def logout(token: str) -> dict[str, Any] | Any:
     try:
         return await keycloak_openid.a_logout(refresh_token=token)
     except KeycloakPostError as error:
+        logger.exception("Error - %s", error)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"{error.error_message}",
         ) from error
     except Exception as exception:
+        logger.exception("Error - %s", exception)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exception)
         ) from exception
