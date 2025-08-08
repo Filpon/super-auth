@@ -49,6 +49,7 @@ class KafkaAdmin:
                 bootstrap_servers=self.bootstrap_servers
             )
             await self.admin_client.start()
+            logger.info("Admin client Kafka instance was started")
         except KafkaTimeoutError as error:
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
@@ -74,6 +75,7 @@ class KafkaAdmin:
         """
         try:
             await self.start()
+            logger.info("Admin client Kafka context manager was started")
             yield self.admin_client
         except KafkaConnectionError as error:
             raise HTTPException(
@@ -96,6 +98,7 @@ class KafkaAdmin:
         try:
             if self.admin_client:
                 await self.admin_client.close()
+                logger.info("Admin client Kafka instance was finished")
         except KafkaError as error:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -130,6 +133,7 @@ class KafkaAdmin:
                     replication_factor=replication_factor,
                 )
                 await admin_client.create_topics([new_topic])
+            logger.info("Topic '%s' was created successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was created successfully"}
         except TopicAlreadyExistsError as error:
             raise HTTPException(
@@ -157,6 +161,7 @@ class KafkaAdmin:
         """
         try:
             await self.admin_client.delete_topics([topic_name])
+            logger.info("Topic '%s' was deleted successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was deleted successfully"}
         except KafkaError as error:
             raise HTTPException(

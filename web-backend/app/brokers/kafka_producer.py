@@ -50,6 +50,7 @@ class KafkaProducer:
                 bootstrap_servers=self.bootstrap_servers,
             )
             await self.producer.start()
+            logger.info("Admin client Kafka producer instance was started")
             return self.producer
         except KafkaTimeoutError as error:
             raise HTTPException(
@@ -78,6 +79,7 @@ class KafkaProducer:
             if isinstance(message, str):
                 message = message.encode("utf-8")
             await self.producer.send_and_wait(topic=topic, value=message)
+            logger.info("Message was sent to topic '%s'", topic)
         except KafkaConnectionError as error:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -97,6 +99,7 @@ class KafkaProducer:
         try:
             if self.producer:
                 await self.producer.stop()
+                logger.info("Admin client Kafka producer instance was finished")
             return self.producer()
         except KafkaError as error:
             raise HTTPException(
@@ -122,6 +125,7 @@ async def get_producer(request: Request):
 
     :returns: The Kafka producer instance stored in the application state
     """
+    logger.info("Application producer instance was used")
     return request.app.state.producer
 
 
