@@ -51,16 +51,19 @@ class KafkaAdmin:
             await self.admin_client.start()
             logger.info("Admin client Kafka instance was started")
         except KafkaTimeoutError as error:
+            logger.exception("Timeout Kafka connection error")
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
                 detail="Timeout Kafka connection error",
             ) from error
         except KafkaConnectionError as error:
+            logger.exception("Unable connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable connect to Kafka server",
             ) from error
         except Exception as exception:
+            logger.exception("Failed to start Kafka, because of %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to start Kafka, because of {str(exception)}",
@@ -78,11 +81,13 @@ class KafkaAdmin:
             logger.info("Admin client Kafka context manager was started")
             yield self.admin_client
         except KafkaConnectionError as error:
+            logger.exception("Unable connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
                 detail="Unable connect to Kafka server",
             ) from error
         except Exception as exception:
+            logger.exception("Failed to start Kafka, because of %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to start Kafka, because of {str(exception)}",
@@ -100,11 +105,13 @@ class KafkaAdmin:
                 await self.admin_client.close()
                 logger.info("Admin client Kafka instance was finished")
         except KafkaError as error:
+            logger.exception("Common base broker error - %s", error)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception("Error - %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(exception),
@@ -136,16 +143,25 @@ class KafkaAdmin:
             logger.info("Topic '%s' was created successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was created successfully"}
         except TopicAlreadyExistsError as error:
+            logger.exception("Topic '%s' already exists", topic_name)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Topic '{topic_name}' already exists",
             ) from error
         except KafkaError as error:
+            logger.exception(
+                "Common base broker error for creation topic '%s' - %s",
+                topic_name,
+                error,
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error for creation topic '{topic_name}' - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception(
+                "Failed to create topic '%s', because %s", topic_name, exception
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to create topic '{topic_name}', because {str(exception)}",
@@ -164,11 +180,19 @@ class KafkaAdmin:
             logger.info("Topic '%s' was deleted successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was deleted successfully"}
         except KafkaError as error:
+            logger.exception(
+                "Common base broker error for deleting topic '%s' - %s",
+                topic_name,
+                error,
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error for deleting topic '{topic_name}' - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception(
+                "Failed to delete topic '%s', because %s", topic_name, exception
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to delete topic '{topic_name}', because {str(exception)}",
@@ -184,11 +208,13 @@ class KafkaAdmin:
             for topic in topics:
                 logger.info(topic)
         except KafkaError as error:
+            logger.exception("Common base broker error for topic listing - %s", error)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error for topic listing - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception("Failed to list topics, because %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to list topics, because {str(exception)}",

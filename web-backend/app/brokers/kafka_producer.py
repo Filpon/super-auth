@@ -53,16 +53,19 @@ class KafkaProducer:
             logger.info("Admin client Kafka producer instance was started")
             return self.producer
         except KafkaTimeoutError as error:
+            logger.exception("Timeout Kafka connection error")
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
                 detail="Timeout Kafka connection error",
             ) from error
         except KafkaConnectionError as error:
+            logger.exception("Unable connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unable connect to Kafka server",
             ) from error
         except Exception as exception:
+            logger.exception("Failed to start Kafka, because of %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to start Kafka, because of {str(exception)}",
@@ -81,11 +84,13 @@ class KafkaProducer:
             await self.producer.send_and_wait(topic=topic, value=message)
             logger.info("Message was sent to topic '%s'", topic)
         except KafkaConnectionError as error:
+            logger.exception("Common base broker error -  %s", error)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception("Failed to send message to Kafka, because of %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to send message to Kafka, because of {str(exception)}",
@@ -102,11 +107,13 @@ class KafkaProducer:
                 logger.info("Admin client Kafka producer instance was finished")
             return self.producer()
         except KafkaError as error:
+            logger.exception("Common base broker error - %s", error)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Common base broker error - {str(error)}",
             ) from error
         except Exception as exception:
+            logger.exception("Error - %s", exception)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(exception),
