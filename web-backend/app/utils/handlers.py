@@ -2,6 +2,10 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
+from app.configs.logging_handler import configure_logging_handler
+
+logger = configure_logging_handler()
+
 
 # Custom exception handler to avoid allowed requests number printing
 async def rate_limit_exceeded_handler(
@@ -17,6 +21,7 @@ async def rate_limit_exceeded_handler(
     :param __: The RateLimitExceeded exception instance
     :returns: JSONResponse with 429 status code and error message
     """
+    logger.error("Too many requests. Please try again later")
     return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={"error": "Too many requests. Please try again later"},
