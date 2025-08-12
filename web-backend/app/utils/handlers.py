@@ -4,7 +4,9 @@ from slowapi.errors import RateLimitExceeded
 
 
 # Custom exception handler to avoid allowed requests number printing
-async def rate_limit_exceeded_handler(_: Request, __: RateLimitExceeded) -> JSONResponse:
+async def rate_limit_exceeded_handler(
+    _: Request, __: RateLimitExceeded
+) -> JSONResponse:
     """
     Handler for the RateLimitExceeded exception
 
