@@ -65,7 +65,7 @@ cd super-auth
 ***docker compose***
 
 ```bash
-docker-compose up --build --remove-orphans
+docker-compose up --build --remove-orphans -d
 ```
 
 ***makefile starting docker-compose***
