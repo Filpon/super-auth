@@ -625,7 +625,7 @@ async def logout(token: str) -> dict[str, Any] | Any:
     except KeycloakPostError as error:
         logger.exception("Error - %s", error)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{error.error_message}",
         ) from error
     except Exception as exception:

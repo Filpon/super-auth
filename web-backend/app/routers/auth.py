@@ -221,6 +221,6 @@ async def logout_user(token: Token) -> dict[str, Any]:
 
     :param str token: Token refreshing from Keycloak
     """
-    logout_result = await logout(token=token.token)
+    await logout(token=token.token)
     logger.info("Logout was successful")
-    return logout_result
+    return {"message": "Logout was successful"}
