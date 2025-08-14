@@ -1,8 +1,0 @@
-services:
-  react-app:
-    build:
-      context: .
-    ports:
-      - '{REACT_APP_PORT}:3000'
-    env_file:
-      - .env
