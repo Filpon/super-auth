@@ -30,13 +30,3 @@ class EventFetchSchema(EventBaseSchema):
 
     class Config:  # pylint: disable=C0115,R0903
         from_attributes = True
-
-
-class TokenResponseModel(BaseModel):
-    """
-    Validation and structure Token Response model
-
-    """
-    expires_in: str
-    refresh_expires_in: str
-    not_before_policy: str
