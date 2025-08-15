@@ -9,6 +9,9 @@ services:
     build: ./nginx
     ports:
       - ${NGINX_PORT}:${NGINX_PORT}
+    environment:
+      BACKEND_PORT: ${BACKEND_PORT}
+      REACT_APP_PORT: ${REACT_APP_PORT}
     depends_on:
       - backend
       - frontend
