@@ -87,6 +87,7 @@ async def startup() -> None:
         logger.info("Database creation was finished")
         await kafka_producer.start()
         app.state.producer = kafka_producer
+        logger.info("Application client Kafka producer was started")
         await kafka_admin.create_topic(
             topic_name="events",
         )
@@ -99,6 +100,7 @@ async def shutdown_event() -> None:
 
     """
     await app.state.producer.stop()
+    logger.info("Application client Kafka producer was finished")
 
 
 @app.get("/check")
