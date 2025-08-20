@@ -1,86 +1,83 @@
 # NGINX
-NGINX_VERSION=1.27.3
-NGINX_PORT=
+NGINX_VERSION=1.27.3 # Project NGINX version
+NGINX_PORT=  # Traffic NGINX port
 
 # POSTGRES
-POSTGRES_VERSION=16
-BACKEND_POSTGRES_USER=
-BACKEND_POSTGRES_PASSWORD=
-BACKEND_POSTGRES_DB=
-BACKEND_POSTGRES_PORT=5432
-KEYCLOAK_POSTGRES_USER=
-KEYCLOAK_POSTGRES_PASSWORD=
-KEYCLOAK_POSTGRES_DB=
+POSTGRES_VERSION=16  # Project Postgres version
+BACKEND_POSTGRES_USER=  # Postgres user for backend container
+BACKEND_POSTGRES_PASSWORD=  # Postgres password for backend container
+BACKEND_POSTGRES_DB=  # Postgres database name for backend container
+BACKEND_POSTGRES_PORT=5432  # Postgres database port for backend container
+KEYCLOAK_POSTGRES_USER=  # Postgres user for keycloak container 
+KEYCLOAK_POSTGRES_PASSWORD=  # Postgres password for keycloak container
+KEYCLOAK_POSTGRES_DB=  # Postgres database name for keycloak container 
 
-# KEYCLOACK
-KC_VERSION=26.0.8
-KC_HOSTNAME=
-KC_HOSTNAME_CONTAINER=
-KC_PORT=
-KC_REALM_NAME=
-KC_LOG_LEVEL=
-KC_CLIENT_SECRET_KEY=
-KC_CLIENT_ID=
-KEYCLOAK_ADMIN=
-KEYCLOAK_ADMIN_PASSWORD=
-KEYCLOAK_HOSTNAME=
-KEYCLOAK_PORT=9000
-KC_REALM_COMMON_CLIENT=
-KC_REALM_COMMON_USER=
-KC_REALM_COMMON_USER_PASSWORD=
+# KEYCLOAK
+KC_VERSION=26.0.8  # Project Keycloak version 
+KC_HOSTNAME=  # Keycloak hostname mentioning protocol, often http://localhost 
+KC_HOSTNAME_CONTAINER=  # Project Keycloak hostname mentioning protocol, e.g. http://example  
+KC_PORT=  # Keycloak port for web-backend container
+KC_REALM_NAME=  # Keycloak main default realm, often master
+KC_LOG_LEVEL=  # Keycloak level of details, often INFO
+KC_CLIENT_SECRET_KEY=  # Keycloak connection secret key in UUID representation
+KC_CLIENT_ID=  # Keycloak connection client identificator in string format
+KEYCLOAK_ADMIN=  # Keycloak admin name default or custom new admin name
+KEYCLOAK_ADMIN_PASSWORD=  # Keycloak admin custom password
+KEYCLOAK_HOSTNAME=  # Project Keycloak hostname, e.g. example
+KEYCLOAK_PORT=9000  # Connection port for keycloak container
+KC_REALM_COMMON_CLIENT=  # Keycloak created realm, often master 
+KC_REALM_COMMON_USER=  # Keycloak custom user name
+KC_REALM_COMMON_USER_PASSWORD=  # Keycloak custom password value 
 
 # PROMETHEUS
-PROMETHEUS_VERSION=
-PROMETHEUS_HOSTNAME=
-PROMETHEUS_PORT=9090
+PROMETHEUS_VERSION=  # Project Prometheus version
+PROMETHEUS_HOSTNAME=  # Prometheus hostname mentioning protocol, often http://localhost 
+PROMETHEUS_PORT=9090  # Prometheus connection port
 
 # REACT
-KC_PORT=
-REACT_APP_VERSION=
-REACT_APP_PORT=
-BACKEND_PORT=
-REACT_APP_DOMAIN_NAME=
-REACT_APP_BACKEND_URL=
-REACT_APP_KEYCLOAK_URL=
-BACKEND_POSTGRES_USER=
-BACKEND_POSTGRES_PASSWORD=
-BACKEND_POSTGRES_DB=
-BACKEND_POSTGRES_PORT=
-REACT_APP_PORT=
-REACT_APP_KEYCLOAK_URL=
-REACT_APP_KEYCLOAK_REALM=
-REACT_APP_KEYCLOAK_CLIENT_ID=
-REACT_APP_LOCAL_HOST=http://127.0.0.1
+REACT_APP_VERSION=  # Project React version 
+REACT_APP_PORT=  # Connection port for frontend container
+BACKEND_PORT=  # Connection port for backend container
+REACT_APP_DOMAIN_NAME=  # Application domain name, for some containerization systems can be empty, e.g. .example.local
+REACT_APP_BACKEND_URL=  # Application backend URL mentioning protocol, e.g. http://example
+BACKEND_POSTGRES_USER=  # Postgres backend default or new username
+BACKEND_POSTGRES_PASSWORD=  # Postgres backend custom password
+BACKEND_POSTGRES_DB=  # Postgres backend database name
+BACKEND_POSTGRES_PORT=  # Postgres backend database connection port
+REACT_APP_PORT=  # Connection React port
+REACT_APP_KEYCLOAK_URL=  # Application Keycloak URL mentioning protocol and port, e.g. http://example:${KC_PORT}
+REACT_APP_KEYCLOAK_REALM=  # Keycloak main default realm, the same value as KC_REALM_NAME
+REACT_APP_KEYCLOAK_CLIENT_ID=  # Keycloak connection client identificator in string format, it could be the same value as KC_CLIENT_ID
+REACT_APP_LOCAL_HOST=http://127.0.0.1  # Application localhost URL mentioning protocol
 
 # GRAFANA
-GF_VERSION=11.3.0
-GF_LOG_LEVEL=info
-GF_SERVER_HTTP_PORT=3001
-GF_HOSTNAME=http://localhost
-GF_ADMIN_USERNAME=
-GF_ADMIN_PASSWORD=
-GF_AUTH_GENERIC_OAUTH_NAME=
-
-NODE_VERSION=22.11.0
+GF_VERSION=11.3.0  # Project Grafana version
+GF_LOG_LEVEL=info  # Grafana logs level of details, often info  
+GF_SERVER_HTTP_PORT=3001  # Grafana server connection via HTTP protocol
+GF_HOSTNAME=http://localhost  # Grafana localhost URL
+GF_ADMIN_USERNAME=  # Grafana admin username
+GF_ADMIN_PASSWORD=  # Grafana admin password
+GF_AUTH_GENERIC_OAUTH_NAME=  # Grafana generic name for OAuth
+NODE_VERSION=22.11.0  # Project Node version
 
 # LOGGING
-LOG_LEVEL=INFO
-LOG_FILE=
+LOG_LEVEL=INFO  # Backend application logs level of details, often INFO
+LOG_FILE=  # Project path for logfile
 
 # BACKEND
-DATABASE_URL=postgresql+asyncpg://${BACKEND_POSTGRES_USER}:${BACKEND_POSTGRES_PASSWORD}@backend-db:${BACKEND_POSTGRES_PORT}/${BACKEND_POSTGRES_DB}
+DATABASE_URL=postgresql+asyncpg://${BACKEND_POSTGRES_USER}:${BACKEND_POSTGRES_PASSWORD}@backend-db:${BACKEND_POSTGRES_PORT}/${BACKEND_POSTGRES_DB}  # Backend database URL
 ORIGINS=  # All container names and domain names linked to backend
 
 # KAFKA
-KAFKA_VERSION=
-KAFKA_PORT=9092
-KAFKA_PORT_LISTENER=9093
-KAFKA_HOSTNAME=
+KAFKA_VERSION=  # Project Kafka version
+KAFKA_PORT=9092  # Kafka connection port
+KAFKA_PORT_LISTENER=9093  # Kafka connection port listener
+KAFKA_HOSTNAME=  # Kafka hostname, e.g. example
 
 # ZOOKEEPER
-ZOOKEEPER_VERSION=
-ZOOKEEPER_PORT=2181
+ZOOKEEPER_VERSION=  # Project Zookeeper version
+ZOOKEEPER_PORT=2181  # Zookeeper connection port 
 
 # KEYDB
-KEYDB_PASSWORD=
-KEYDB_PORT=6379
+KEYDB_PASSWORD=  # KeyDB custom password
+KEYDB_PORT=6379  # KeyDB connection port
