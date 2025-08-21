@@ -1,6 +1,5 @@
 # exceptions.py
-from fastapi import HTTPException
-from fastapi import status
+from fastapi import HTTPException, status
 
 
 class InvalidCredentialsException(HTTPException):

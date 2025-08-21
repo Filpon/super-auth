@@ -6,6 +6,7 @@ from mimesis import Generic
 # Initialize Mimesis Generic
 generic = Generic()
 
+
 def generate_test_credentials() -> tuple[str, str]:
     """
     Generate a test user with a random username and password.
@@ -16,7 +17,9 @@ def generate_test_credentials() -> tuple[str, str]:
     :return tuple(str, str): A tuple containing the generated username and password.
     """
     username = generic.person.username()
-    password = generic.text.word() + str(randint(1000, 9999))  # Simple password generation
+    password = generic.text.word() + str(
+        randint(1000, 9999)
+    )  # Simple password generation
     return username, password
 
 

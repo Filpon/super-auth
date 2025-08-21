@@ -31,12 +31,15 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         :return Response: The response object returned by the next middleware or endpoint
         """
-        request_query_params = request.query_params if request.query_params else "absence"
+        request_query_params = (
+            request.query_params if request.query_params else "absence"
+        )
         # Logging the request details
-        logger.info("Request: Method %s - Request URL %s - Query parameters %s",
+        logger.info(
+            "Request: Method %s - Request URL %s - Query parameters %s",
             request.method,
             request.url,
-            request_query_params
+            request_query_params,
         )
 
         # Calling the next middleware or endpoint
