@@ -58,9 +58,11 @@ git clone https://github.com/Filpon/super-auth.git
 cd super-auth
 ```
 
-2. Completion .env files according to .example-env files in folders
+2. Creation .env file in project root directory
 
-3. Running script via
+3. Completion .env file according to project root directory .example-env file
+
+4. Running script via
 
 ***docker compose***
 
@@ -74,7 +76,7 @@ docker-compose up --build --remove-orphans -d
 make -d start
 ```
 
-### Installing modules
+### Installing distinct modules
 
 ***uv - preferring***
 
@@ -91,7 +93,7 @@ python -m pip install package-name
 ## Configuration
  
 Updating the config.py file in the backend with your Keycloak server details, including the realm, client ID, and client secret.
-Modifying the NGINX configuration file (nginx.conf) as needed to point to your FastAPI and ReactJS applications.
+Modifying the NGINX configuration files (nginx.conf, site.conf) as needed to point to your FastAPI and ReactJS applications.
 
 ## Running the Application Components
 
