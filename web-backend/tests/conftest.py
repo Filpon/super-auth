@@ -236,7 +236,7 @@ def docker_compose_file(pytestconfig):
 
     :return Path: The path to the Docker Compose file
     """
-    return Path(pytestconfig.rootdir).parent / "compose.yml"
+    return Path(pytestconfig.rootdir).parent / "compose.yaml"
 
 
 @pytest.fixture(scope="function")
@@ -260,10 +260,10 @@ async def backend_container_runner(docker_ip, docker_services):
     port = docker_services.port_for("backend", BACKEND_PORT_VALUE)
     url = f"http://{docker_ip}:{port}"
     docker_services.wait_until_responsive(
-        timeout=310, pause=0.1, check=lambda: is_responsive(url=url)
+        timeout=210, pause=0.1, check=lambda: is_responsive(url=url)
     )
     async with AsyncClient(base_url=url) as client:
-        time.sleep(7)
+        time.sleep(5)
         yield client
 
 
