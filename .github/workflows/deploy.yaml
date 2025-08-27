@@ -1,0 +1,77 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest  # Suitable container runner label
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '21'
+
+      - name: Installing Yarn
+        run: |
+          npm install -g yarn
+
+      - name: Installing web-react dependencies
+        run: |
+          cd web-react
+          yarn install
+
+      - name: Installing web-backend test packages
+        run: pip install pre-commit pytest pytest-docker dotenv fastapi httpx sqlalchemy mimesis asyncpg trio
+
+      - name: Creation logfile
+        run: |
+          mkdir -p ./web-backend/app/logs
+          touch ./web-backend/app/logs/logfile.log
+
+      - name: Run tests
+        run: |
+          ./web-backend/run-pytest.sh
+
+  build:
+    runs-on: ubuntu-latest  # Suitable container runner label
+    needs: pre-commit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      
+      - name: Docker Compose installation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Build Docker images
+        run: docker-compose -f compose.yaml build
+
+  deploy:
+    runs-on: ubuntu-latest  # Suitable container runner label
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Docker Compose installation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Localhost deployment
+        run: |
+          docker-compose up --build --remove-orphans -d
+
+      # - name: Remote server deployment
+      #   run: |
+      #     ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "docker-compose up --build --remove-orphans -d"

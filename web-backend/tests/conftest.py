@@ -263,7 +263,7 @@ async def backend_container_runner(docker_ip, docker_services):
         timeout=210, pause=0.1, check=lambda: is_responsive(url=url)
     )
     async with AsyncClient(base_url=url) as client:
-        time.sleep(5)
+        time.sleep(50)
         yield client
 
 
