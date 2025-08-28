@@ -76,6 +76,10 @@ docker-compose up --build --remove-orphans -d
 make -d start
 ```
 
+***continuous integration and continuous delivery workflow***
+
+Deployment code according to super-auth/.github/workflows/deploy.yaml
+
 ### Installing distinct modules
 
 ***uv - preferring***
