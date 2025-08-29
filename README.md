@@ -11,6 +11,7 @@ This project represents the practial approach how to integrate Keycloak for auth
 
 - [Features](#features)
 - [Technologies Used](#technologies-used)
+- [Release process](#release-process)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
@@ -34,6 +35,15 @@ This project represents the practial approach how to integrate Keycloak for auth
 - ReactJS - JavaScript and TypeScript library for building user interfaces
 - NGINX - Web server and reverse proxy
 - Docker - Containerization platform
+
+## Release process
+
+The project release process is managed in super-auth/web-react with current version number specification (e.g., version 1.0.0) as follows:
+
+```bash
+cd web-react
+yarn release 1.0.0
+```
 
 ## Getting Started
 

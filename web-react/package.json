@@ -35,7 +35,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "format": "prettier --write ./src",
-    "release": "standard-version --infile ../CHANGELOG.md",
+    "release": "standard-version --infile ../CHANGELOG.md --release-as",
     "seslint": "eslint --fix --max-warnings=0 --ignore-pattern 'node_modules' src"
   },
   "standard-version": {
