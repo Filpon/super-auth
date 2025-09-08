@@ -33,7 +33,7 @@ export const checkRefreshToken = async () => {
         const response: AxiosResponse = await apiRequest.post(
           '/api/v1/auth/refresh',
           JSON.stringify({
-            token: refreshToken,
+            token: refreshToken
           }),
           {
             headers: {

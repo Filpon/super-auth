@@ -22,8 +22,6 @@ export const peridodicRefreshAuthCheck = (seconds = 120) => {
 
 export const logout = async () => {
   const refreshToken = localStorage.getItem('refresh_token');
-  clearTokens();
-
   await apiRequest.post(
     '/api/v1/auth/logout',
     JSON.stringify({ token: refreshToken }),
@@ -33,6 +31,7 @@ export const logout = async () => {
       },
     },
   );
+  clearTokens();
 };
 
 export const authorized_fetch = async (
