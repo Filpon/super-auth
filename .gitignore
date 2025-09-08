@@ -1,3 +1,7 @@
+db_data/
+keycloak_data/
+*.db
+*.tmp
 .env
 
 .DS_Store

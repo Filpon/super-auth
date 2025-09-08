@@ -85,10 +85,7 @@ services:
       POSTGRES_PASSWORD: ${BACKEND_POSTGRES_PASSWORD}
       POSTGRES_DB: ${BACKEND_POSTGRES_DB}
     volumes:
-      - type: tmpfs
-        target: /var/lib/postgresql/data
-        tmpfs:
-          size: 100000000
+      - ./db_data:/var/lib/postgresql/data
     networks:
       - keycloak-network
     logging: *logging
@@ -162,10 +159,7 @@ services:
     networks:
       - keycloak-network
     volumes:
-      - type: tmpfs
-        target: /var/lib/postgresql/data
-        tmpfs:
-          size: 100000000
+      - ./keycloak_data:/var/lib/postgresql/data
 
   keydb:
     image: eqalpha/keydb:latest
@@ -272,6 +266,7 @@ services:
 
 volumes:
   db_data:
+  keycloak_data:
 
 networks:
   keycloak-network:
