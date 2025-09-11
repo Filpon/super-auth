@@ -1,4 +1,5 @@
 # pylint: skip-file
+import json
 import os
 import time
 from datetime import datetime
@@ -24,6 +25,9 @@ BACKEND_PORT = os.getenv("BACKEND_PORT")
 DATABASE_URL = os.getenv("DATABASE_URL")
 REACT_APP_BACKEND_URL = os.getenv("REACT_APP_BACKEND_URL")
 REACT_APP_DOMAIN_NAME = os.getenv("REACT_APP_DOMAIN_NAME")
+KC_REALM_COMMON_CLIENT = os.getenv("KC_REALM_COMMON_CLIENT")
+KEYCLOAK_ADMIN = os.getenv("KEYCLOAK_ADMIN")
+KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD")
 
 USER, PASSWORD = generate_test_credentials()
 ACCESS_TOKEN = generate_random_keycloak_token()
@@ -267,11 +271,46 @@ async def backend_container_runner(docker_ip, docker_services):
         yield client
 
 
-@pytest.fixture
-def current_access_token():
+@pytest.fixture(scope="function")
+async def admin_user_tokens(backend_container_runner) -> dict[str, str]:
     """
-    Fixture that provides access token for Keycloak container
+    Fixture that provides admin access tokens for Docker container
 
-    :return str ACCESS_TOKEN: Access token
+    :param backend_container_runner: Fixture that provides way to
+    run the backend container and interact with it during tests
+
+    :return dict[str, str]: Access tokens
     """
-    return ACCESS_TOKEN
+
+    response = await backend_container_runner.post(
+        "/api/v1/auth/token",
+        data={"username": KEYCLOAK_ADMIN, "password": KEYCLOAK_ADMIN_PASSWORD},
+    )
+    return {
+        "access_token": json.loads(response.text)["access_token"],
+        "refresh_token": json.loads(response.text)["refresh_token"],
+    }
+
+
+@pytest.fixture(scope="function")
+async def common_user_tokens(backend_container_runner) -> dict[str, str]:
+    """
+    Fixture that provides common user access token for Docker container
+
+    :param backend_container_runner: Fixture that provides way to
+    run the backend container and interact with it during tests
+
+    :return dict[str, str]: Access tokens
+    """
+    await backend_container_runner.post(
+        "/api/v1/auth/register",
+        data={"username": USER, "password": PASSWORD},
+    )
+    response = await backend_container_runner.post(
+        "/api/v1/auth/token",
+        data={"username": USER, "password": PASSWORD},
+    )
+    return {
+        "access_token": json.loads(response.text)["access_token"],
+        "refresh_token": json.loads(response.text)["refresh_token"],
+    }

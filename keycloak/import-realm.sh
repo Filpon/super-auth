@@ -2,7 +2,7 @@
 
 set -a
 
-# Disabing automatic export
+# Disabling automatic export
 set +a
 
 process_json_file() {
@@ -42,31 +42,24 @@ process_json_file "$JSON_FILE_USER" "$OUTPUT_FILE_USER"
 
 echo "Envs values are substituted. Results are saved in $OUTPUT_FILE_CLIENT and $OUTPUT_FILE_USER"
 
-sleep 3
-echo $KC_REALM_NAME
-echo $KC_REALM_COMMON
-echo $KEYCLOAK_ADMIN
-echo $KEYCLOAK_ADMIN_PASSWORD
-echo $KC_REALM_COMMON_USER
-echo $KC_REALM_COMMON_USER_PASSWORD
+sleep 5
 
 # Variables
 KEYCLOAK_URL="http://localhost:8080"  # Adjust if necessary
+SUB_TOKEN_JSON="/tmp/import/sub-token.json"
 
 echo "Starting the script..."
 
-/opt/keycloak/bin/kc.sh start-dev &
+/opt/keycloak/bin/kc.sh start --http-port=8080 --db-url=jdbc:postgresql://keycloak-db/$KEYCLOAK_POSTGRES_DB --db-username=$KEYCLOAK_POSTGRES_USER --db-password=$KEYCLOAK_POSTGRES_PASSWORD --hostname-strict=false &
 
-sleep 25
-
-echo "25 seconds have passed."
+sleep 45
 
 # Log in to Keycloak
 /opt/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL --realm $KC_REALM_NAME --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
 
-sleep 5
+echo "Keycloak started and Admin CLI configured"
 
-echo "Keycloak started and Admin CLI configured."
+sleep 5
 
 # Client creation
 if /opt/keycloak/bin/kcadm.sh get clients -r "$KC_REALM_NAME" | grep -q "\"clientId\": \"$KC_REALM_COMMON_CLIENT\""; then
@@ -75,19 +68,21 @@ else
   echo "Client $KC_REALM_COMMON_CLIENT does not exist in realm $KC_REALM_NAME"
   # Client creation from file
   /opt/keycloak/bin/kcadm.sh create clients -r "$KC_REALM_NAME" -f $OUTPUT_FILE_CLIENT
-  echo "Client $KC_REALM_COMMON_CLIENT was created in realm $KC_REALM_NAME"
+  echo "Client $KC_REALM_COMMON_CLIENT was created in realm $KC_REALM_NAME."
+  /opt/keycloak/bin/kcadm.sh create clients/$KC_REALM_COMMON_CLIENT/protocol-mappers/models -r $KC_REALM_NAME -f $SUB_TOKEN_JSON
+  echo "Sub property was included for client $KC_REALM_COMMON_CLIENT"
 fi
 
-# User сreation
+# User creating
 if /opt/keycloak/bin/kcadm.sh get users -r "$KC_REALM_NAME" | grep -q "\"username\": \"$KC_REALM_COMMON_USER\""; then
   echo "User $KC_REALM_COMMON_USER exists in realm $KC_REALM_NAME"
 else
   echo "User $KC_REALM_COMMON_USER does not exist in realm $KC_REALM_NAME"
-  # User сreation from file
   /opt/keycloak/bin/kcadm.sh create users -r "$KC_REALM_NAME" -f $OUTPUT_FILE_USER
   echo "User $KC_REALM_COMMON_USER was created in realm $KC_REALM_NAME"
   /opt/keycloak/bin/kcadm.sh add-roles -r "$KC_REALM_NAME" --uusername "$KC_REALM_COMMON_USER" --rolename admin
-  echo "Roles were included for user $KC_REALM_COMMON_USER"
+  echo "Role admin was included for user $KC_REALM_COMMON_USER"
+
 fi
 
 wait

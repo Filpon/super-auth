@@ -1,3 +1,4 @@
+import re
 import string
 from random import choice, randint
 
@@ -20,7 +21,10 @@ def generate_test_credentials() -> tuple[str, str]:
     password = generic.text.word() + str(
         randint(1000, 9999)
     )  # Simple password generation
-    return username, password
+
+    email_username = re.sub(r'[^a-zA-Z0-9]', '', username)
+
+    return email_username, password
 
 
 def generate_random_keycloak_token(length=765) -> string:

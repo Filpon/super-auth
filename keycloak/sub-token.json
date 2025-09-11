@@ -1,0 +1,10 @@
+{
+    "name": "sub",
+    "protocol": "openid-connect",
+    "protocolMapper": "oidc-sub-mapper",
+    "consentRequired": false,
+    "config": {
+        "introspection.token.claim": "true",
+        "access.token.claim": "true"
+    }
+}
