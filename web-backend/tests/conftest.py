@@ -9,7 +9,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from dotenv import load_dotenv
 from fastapi import status
-from httpx import AsyncClient, ConnectError, Response
+from httpx import (
+    AsyncClient,
+    Client,
+    ConnectError,
+    ReadError,
+    RemoteProtocolError,
+    Response,
+)
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.database.models import Base
@@ -28,6 +35,7 @@ REACT_APP_DOMAIN_NAME = os.getenv("REACT_APP_DOMAIN_NAME")
 KC_REALM_COMMON_CLIENT = os.getenv("KC_REALM_COMMON_CLIENT")
 KEYCLOAK_ADMIN = os.getenv("KEYCLOAK_ADMIN")
 KEYCLOAK_ADMIN_PASSWORD = os.getenv("KEYCLOAK_ADMIN_PASSWORD")
+KC_PORT = os.getenv("KC_PORT")
 
 USER, PASSWORD = generate_test_credentials()
 ACCESS_TOKEN = generate_random_keycloak_token()
@@ -214,7 +222,7 @@ async def client_mock_keycloak():
             yield client, mock_keycloak
 
 
-async def is_responsive(url):
+def is_responsive(url) -> bool:
     """
     Check if the input URL is responsive
 
@@ -223,11 +231,11 @@ async def is_responsive(url):
     :return bool: True if the response status code is successful, False otherwise
     """
     try:
-        async with AsyncClient() as client:
-            response = await client.get(url=url)
-            if response.status_code == status.HTTP_200_OK:
+        with Client() as client:
+            response = client.get(url=url)
+            if response.status_code in {status.HTTP_200_OK, status.HTTP_302_FOUND}:
                 return True
-    except ConnectError:
+    except (ConnectError, ReadError, RemoteProtocolError):
         return False
 
 
@@ -261,13 +269,24 @@ async def backend_container_runner(docker_ip, docker_services):
     except ValueError as excp:
         raise ValueError("Converting value to integer error") from excp
 
-    port = docker_services.port_for("backend", BACKEND_PORT_VALUE)
-    url = f"http://{docker_ip}:{port}"
+    try:
+        KC_PORT_VALUE = int(KC_PORT)
+    except ValueError as excp:
+        raise ValueError("Converting value to integer error") from excp
+
+    port_backend = docker_services.port_for("backend", BACKEND_PORT_VALUE)
+    url_backend = f"http://{docker_ip}:{port_backend}/check"
+    port_keycloak = docker_services.port_for("keycloak", KC_PORT_VALUE)
+    url_keycloak = f"http://{docker_ip}:{port_keycloak}"
     docker_services.wait_until_responsive(
-        timeout=210, pause=0.1, check=lambda: is_responsive(url=url)
+        timeout=310, pause=2, check=lambda: is_responsive(url=url_backend)
     )
-    async with AsyncClient(base_url=url) as client:
-        time.sleep(50)
+    docker_services.wait_until_responsive(
+        timeout=310, pause=2, check=lambda: is_responsive(url=url_keycloak)
+    )
+    url_backend = url_backend.replace("/check", "")
+    async with AsyncClient(base_url=url_backend) as client:
+        time.sleep(5)
         yield client
 
 
@@ -283,7 +302,7 @@ async def admin_user_tokens(backend_container_runner) -> dict[str, str]:
     """
 
     response = await backend_container_runner.post(
-        "/api/v1/auth/token",
+        url="/api/v1/auth/token",
         data={"username": KEYCLOAK_ADMIN, "password": KEYCLOAK_ADMIN_PASSWORD},
     )
     return {
@@ -303,11 +322,11 @@ async def common_user_tokens(backend_container_runner) -> dict[str, str]:
     :return dict[str, str]: Access tokens
     """
     await backend_container_runner.post(
-        "/api/v1/auth/register",
+        url="/api/v1/auth/register",
         data={"username": USER, "password": PASSWORD},
     )
     response = await backend_container_runner.post(
-        "/api/v1/auth/token",
+        url="/api/v1/auth/token",
         data={"username": USER, "password": PASSWORD},
     )
     return {

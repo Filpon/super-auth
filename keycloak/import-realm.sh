@@ -45,14 +45,29 @@ echo "Envs values are substituted. Results are saved in $OUTPUT_FILE_CLIENT and 
 sleep 5
 
 # Variables
-KEYCLOAK_URL="http://localhost:8080"  # Adjust if necessary
+KEYCLOAK_PORT=8080
+KEYCLOAK_URL_LOCALHOST="localhost"
+KEYCLOAK_URL="http://localhost"
+KEYCLOAK_URL_PORT="$KEYCLOAK_URL:$KEYCLOAK_PORT"
+RETRY_INTERVAL=5
 SUB_TOKEN_JSON="/tmp/import/sub-token.json"
 
 echo "Starting the script..."
 
-/opt/keycloak/bin/kc.sh start --http-port=8080 --db-url=jdbc:postgresql://keycloak-db/$KEYCLOAK_POSTGRES_DB --db-username=$KEYCLOAK_POSTGRES_USER --db-password=$KEYCLOAK_POSTGRES_PASSWORD --hostname-strict=false &
+/opt/keycloak/bin/kc.sh start --http-port=$KEYCLOAK_PORT --db-url=jdbc:postgresql://keycloak-db/$KEYCLOAK_POSTGRES_DB --db-username=$KEYCLOAK_POSTGRES_USER --db-password=$KEYCLOAK_POSTGRES_PASSWORD --hostname-strict=false &
 
-sleep 45
+# Function checking if Keycloak container is ready to receive connections
+check_keycloak() {
+    (echo > /dev/tcp/$KEYCLOAK_URL_LOCALHOST/$KEYCLOAK_PORT) > /dev/null 2>&1
+}
+
+# Wait until Keycloak container is ready to receive connections
+until check_keycloak; do
+    echo "Waiting for Keycloak to start..."
+    sleep $RETRY_INTERVAL
+done
+
+echo "Keycloak container is ready to receive connections!"
 
 # Log in to Keycloak
 /opt/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL --realm $KC_REALM_NAME --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
