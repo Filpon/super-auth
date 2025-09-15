@@ -67,6 +67,7 @@ LOG_FILE=  # Project path for logfile
 # BACKEND
 DATABASE_URL=postgresql+asyncpg://${BACKEND_POSTGRES_USER}:${BACKEND_POSTGRES_PASSWORD}@backend-db:${BACKEND_POSTGRES_PORT}/${BACKEND_POSTGRES_DB}  # Backend database URL
 ORIGINS=  # All container names and domain names linked to backend
+TESTING=  # Unit testing indicator, empty here, sets to 'true' in pyproject.toml
 
 # KAFKA
 KAFKA_VERSION=  # Project Kafka version

@@ -7,6 +7,7 @@ from fastapi import status
 from .conftest import KC_REALM_COMMON_CLIENT
 from .data_generating_testing import find_event_by_name
 
+
 @pytest.mark.anyio
 async def test_fetch_events(backend_container_runner, admin_user_tokens):
     """
@@ -55,7 +56,10 @@ async def test_create_event(backend_container_runner, admin_user_tokens):
         headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
         json=event_data,
     )
-    assert response_creation.status_code in {status.HTTP_200_OK, status.HTTP_201_CREATED}
+    assert response_creation.status_code in {
+        status.HTTP_200_OK,
+        status.HTTP_201_CREATED,
+    }
 
     response = await backend_container_runner.get(
         url="/api/v1/events",
@@ -63,5 +67,5 @@ async def test_create_event(backend_container_runner, admin_user_tokens):
     )
     assert response.status_code == status.HTTP_200_OK
     found_event = find_event_by_name(data_string=response.text, event_name=event_name)
-    found_event.pop('id', None)
+    found_event.pop("id", None)
     assert found_event == json.loads(response_creation.text)

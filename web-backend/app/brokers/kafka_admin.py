@@ -20,6 +20,7 @@ load_dotenv()
 
 KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
 KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
+KAFKA_TOPIC_ALREADY_EXISTS_ERROR: Final[int] = 36
 
 
 class KafkaAdmin:
@@ -133,19 +134,25 @@ class KafkaAdmin:
         :return dict: Message indicating the success of the topic creation
         """
         try:
+            response_result = {"topic_errors": [("Test", 0, "Test")]}
             async with self.start_context_manager() as admin_client:
                 new_topic = NewTopic(
                     name=topic_name,
                     num_partitions=num_partitions,
                     replication_factor=replication_factor,
                 )
-                await admin_client.create_topics([new_topic])
+                response_result = await admin_client.create_topics([new_topic])
+            if (
+                KAFKA_TOPIC_ALREADY_EXISTS_ERROR in response_result.topic_errors[0]
+                and "already exists" in response_result.topic_errors[0][2]
+            ):
+                raise TopicAlreadyExistsError
             logger.info("Topic '%s' was created successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was created successfully"}
         except TopicAlreadyExistsError as error:
             logger.exception("Topic '%s' already exists", topic_name)
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_409_CONFLICT,
                 detail=f"Topic '{topic_name}' already exists",
             ) from error
         except KafkaError as error:

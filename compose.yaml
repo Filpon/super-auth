@@ -63,6 +63,7 @@ services:
       LOG_FILE: ${LOG_FILE}
       ORIGINS: ${ORIGINS}
       DATABASE_URL: postgresql+asyncpg://${BACKEND_POSTGRES_USER}:${BACKEND_POSTGRES_PASSWORD}@backend-db:${BACKEND_POSTGRES_PORT}/${BACKEND_POSTGRES_DB}
+      TESTING: ${TESTING}
     depends_on:
       - keycloak
       - backend-db

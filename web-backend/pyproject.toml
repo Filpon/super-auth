@@ -40,6 +40,9 @@ show_error_context = true
 asyncio_default_fixture_loop_scope = "function"
 # Specify the test paths
 testpaths = ["tests"]
+env = [
+    "TESTING=true",
+]
 
 # Add any additional options you want to configure
 addopts = "-v --tb=short"
@@ -82,6 +85,7 @@ dependencies = [
     "pytest-docker>=3.2.3",
     "redis>=6.2.0",
     "fastapi-cache2>=0.2.2",
+    "pytest-env>=1.1.5",
 ]
 
 [dependency-groups]
