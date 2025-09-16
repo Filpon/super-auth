@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from fastapi import status
 
@@ -244,7 +242,7 @@ async def test_update_user_account(backend_container_runner, admin_user_tokens):
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
     user_sub_id = ""
-    for user in json.loads(response_fetch_users.text)["users"]:
+    for user in response_fetch_users.json()["users"]:
         if username == user["username"]:
             user_sub_id = user["id"]
             break
@@ -289,7 +287,7 @@ async def test_delete_user_account(backend_container_runner, admin_user_tokens):
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
     user_sub_id = ""
-    for user in json.loads(response_fetch_users.text)["users"]:
+    for user in response_fetch_users.json()["users"]:
         if username == user["username"]:
             user_sub_id = user["id"]
             break
@@ -305,7 +303,7 @@ async def test_delete_user_account(backend_container_runner, admin_user_tokens):
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
 
-    for user in json.loads(response_fetch_users.text)["users"]:
+    for user in response_fetch_users.json()["users"]:
         if username == user["username"]:
             assert False
 
@@ -330,7 +328,7 @@ async def test_common_user_protected_route(backend_container_runner, common_user
         headers={"Authorization": f"Bearer {common_user_tokens['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
-    assert json.loads(response.text).get("message", "") == "This is the protected route"
+    assert response.json().get("message", "") == "This is the protected route"
 
 
 @pytest.mark.anyio
@@ -353,7 +351,7 @@ async def test_admin_user_protected_route(backend_container_runner, admin_user_t
         headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
-    assert json.loads(response.text).get("message", "") == "This is the protected route"
+    assert response.json().get("message", "") == "This is the protected route"
 
 
 @pytest.mark.anyio
@@ -376,8 +374,8 @@ async def test_common_user_introspect_token(backend_container_runner, common_use
         headers={"Authorization": f"Bearer {common_user_tokens['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
-    assert len(json.loads(response.text).get("groups", []))
-    assert "admin" not in json.loads(response.text).get("groups", [])
+    assert len(response.json().get("groups", []))
+    assert "admin" not in response.json().get("groups", [])
 
 
 @pytest.mark.anyio
@@ -400,7 +398,7 @@ async def test_admin_user_introspect_token(backend_container_runner, admin_user_
         headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
-    assert "admin" in json.loads(response.text).get("groups", [])
+    assert "admin" in response.json().get("groups", [])
 
 
 @pytest.mark.anyio
