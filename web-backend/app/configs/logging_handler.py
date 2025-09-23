@@ -9,7 +9,7 @@ load_dotenv()
 
 # Configure logging
 LOG_LEVEL: Final[int] = INFO
-LOG_FILE: Final[str] = Path(__file__).resolve().parent.parent / "logs" / "logfile.log"
+LOG_FILE: Final[Path] = Path(__file__).resolve().parent.parent / "logs" / "logfile.log"
 MAX_BYTES: Final[int] = (
     5 * 1024 * 1024
 )  # Maximum file size in bytes before rotation - currently 5 MB
@@ -17,7 +17,7 @@ BACKUP_COUNT: Final[int] = 3  # Backup files number
 
 
 def configure_logging_handler(
-    log_file: str = LOG_FILE,
+    log_file: Path = LOG_FILE,
     level: int = LOG_LEVEL,
     max_bytes: int = MAX_BYTES,
     backup_count: int = BACKUP_COUNT,

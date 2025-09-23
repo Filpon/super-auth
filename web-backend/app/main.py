@@ -1,5 +1,5 @@
 import os
-from typing import Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, status
@@ -118,7 +118,7 @@ async def root() -> Response:
 
 
 @app.get("/admin")  # Requires the admin role
-def call_admin(user: str = Depends(verify_permission(required_roles=["admin"]))) -> str:
+def call_admin(user: dict[str, Any] =  Depends(verify_permission(required_roles=["admin"]))) -> str:
     """
     Admin role obtaining
 

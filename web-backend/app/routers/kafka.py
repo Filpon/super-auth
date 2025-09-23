@@ -1,5 +1,5 @@
 import os
-from typing import Final
+from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, status
@@ -13,8 +13,8 @@ logger = configure_logging_handler()
 
 load_dotenv()
 
-KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
-KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
+KAFKA_HOSTNAME: Optional[str] = os.getenv("KAFKA_HOSTNAME")
+KAFKA_PORT: Optional[str] = os.getenv("KAFKA_PORT")
 
 router = APIRouter()
 

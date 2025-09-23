@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from typing import Final
+from typing import Final, Optional
 
 from aiokafka.admin import AIOKafkaAdminClient, NewTopic
 from aiokafka.errors import (
@@ -18,8 +18,8 @@ logger = configure_logging_handler()
 
 load_dotenv()
 
-KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
-KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
+KAFKA_HOSTNAME: Final[Optional[str]] = os.getenv("KAFKA_HOSTNAME")
+KAFKA_PORT: Final[Optional[str]] = os.getenv("KAFKA_PORT")
 KAFKA_TOPIC_ALREADY_EXISTS_ERROR: Final[int] = 36
 
 
@@ -38,19 +38,18 @@ class KafkaAdmin:
         :param str bootstrap_servers: Kafka connecting servers
         """
         self.bootstrap_servers = bootstrap_servers
-        self.admin_client = None
+        self.admin_client: Optional[AIOKafkaAdminClient] = AIOKafkaAdminClient(
+            bootstrap_servers=self.bootstrap_servers
+        )
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Start active Kafka admin client instance
-
         """
         try:
-            self.admin_client = AIOKafkaAdminClient(
-                bootstrap_servers=self.bootstrap_servers
-            )
-            await self.admin_client.start()
-            logger.info("Admin client Kafka instance was started")
+            if self.admin_client:
+                await self.admin_client.start()
+                logger.info("Admin client Kafka instance was started")
         except KafkaTimeoutError as error:
             logger.exception("Timeout Kafka connection error")
             raise HTTPException(
@@ -58,10 +57,10 @@ class KafkaAdmin:
                 detail="Timeout Kafka connection error",
             ) from error
         except KafkaConnectionError as error:
-            logger.exception("Unable connect to Kafka server")
+            logger.exception("Unable to connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable connect to Kafka server",
+                detail="Unable to connect to Kafka server",
             ) from error
         except Exception as exception:
             logger.exception("Failed to start Kafka, because of %s", exception)
@@ -71,7 +70,7 @@ class KafkaAdmin:
             ) from exception
 
     @asynccontextmanager
-    async def start_context_manager(self):
+    async def start_context_manager(self) -> AIOKafkaAdminClient:
         """
         Asynchronous context manager to start the Kafka admin client
 
@@ -82,10 +81,10 @@ class KafkaAdmin:
             logger.info("Admin client Kafka context manager was started")
             yield self.admin_client
         except KafkaConnectionError as error:
-            logger.exception("Unable connect to Kafka server")
+            logger.exception("Unable to connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_408_REQUEST_TIMEOUT,
-                detail="Unable connect to Kafka server",
+                detail="Unable to connect to Kafka server",
             ) from error
         except Exception as exception:
             logger.exception("Failed to start Kafka, because of %s", exception)
@@ -94,12 +93,12 @@ class KafkaAdmin:
                 detail=f"Failed to start Kafka, because of {str(exception)}",
             ) from exception
         finally:
-            await self.admin_client.close()
+            if self.admin_client:
+                await self.admin_client.close()
 
     async def stop(self) -> None:
         """
         Stop the Kafka admin client
-
         """
         try:
             if self.admin_client:
@@ -125,7 +124,7 @@ class KafkaAdmin:
         replication_factor: int = 1,
     ) -> dict[str, str]:
         """
-        Creation new Kafka topic
+        Creation of new Kafka topic
 
         :param str topic_name: The name of the topic for creation
         :param int num_partitions: The number of partitions for the topic creation
@@ -183,6 +182,11 @@ class KafkaAdmin:
         :return dict: Message indicating the success of the topic deleting
         """
         try:
+            if self.admin_client is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Kafka admin client is not initialized",
+                )
             await self.admin_client.delete_topics([topic_name])
             logger.info("Topic '%s' was deleted successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was deleted successfully"}
@@ -205,12 +209,16 @@ class KafkaAdmin:
                 detail=f"Failed to delete topic '{topic_name}', because {str(exception)}",
             ) from exception
 
-    async def list_topics(self):
+    async def list_topics(self) -> None:
         """
         Listing all Kafka topics
-
         """
         try:
+            if self.admin_client is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Kafka admin client is not initialized",
+                )
             topics = await self.admin_client.list_topics()
             for topic in topics:
                 logger.info(topic)

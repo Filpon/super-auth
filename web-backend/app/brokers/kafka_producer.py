@@ -1,5 +1,5 @@
 import os
-from typing import Final
+from typing import Final, Optional
 
 from aiokafka import AIOKafkaProducer
 from aiokafka.errors import (
@@ -16,15 +16,15 @@ logger = configure_logging_handler()
 
 load_dotenv()
 
-KAFKA_HOSTNAME: Final[str] = os.getenv("KAFKA_HOSTNAME")
-KAFKA_PORT: Final[str] = os.getenv("KAFKA_PORT")
+KAFKA_HOSTNAME: Final[Optional[str]] = os.getenv("KAFKA_HOSTNAME", "")
+KAFKA_PORT: Final[Optional[str]] = os.getenv("KAFKA_PORT", "")
 
 
 class KafkaProducer:
     """
     Managing Kafka topics using Kafka Producer
 
-    This class provides methods for start connection Kafka container
+    The class provides methods for starting connection to Kafka container
     and sending Kafka messages, as well as to start and stop the Kafka producer
     """
 
@@ -35,22 +35,22 @@ class KafkaProducer:
         :param str bootstrap_servers: Kafka connecting server
         :param str topic: Kafka topic name
         """
-
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
-        self.producer = None
+        self.producer: Optional[AIOKafkaProducer] = AIOKafkaProducer(
+            bootstrap_servers=self.bootstrap_servers,
+        )
 
-    async def start(self):
+    async def start(self) -> AIOKafkaProducer:
         """
-        Creation active Kafka producer
+        Creation of active Kafka producer
 
+        :returns AIOKafkaProducer: The AIOKafkaProducer instance
         """
         try:
-            self.producer = AIOKafkaProducer(
-                bootstrap_servers=self.bootstrap_servers,
-            )
-            await self.producer.start()
-            logger.info("Admin client Kafka producer instance was started")
+            if self.producer:
+                await self.producer.start()
+                logger.info("Admin client Kafka producer instance was started")
             return self.producer
         except KafkaTimeoutError as error:
             logger.exception("Timeout Kafka connection error")
@@ -59,10 +59,10 @@ class KafkaProducer:
                 detail="Timeout Kafka connection error",
             ) from error
         except KafkaConnectionError as error:
-            logger.exception("Unable connect to Kafka server")
+            logger.exception("Unable to connect to Kafka server")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable connect to Kafka server",
+                detail="Unable to connect to Kafka server",
             ) from error
         except Exception as exception:
             logger.exception("Failed to start Kafka, because of %s", exception)
@@ -81,6 +81,11 @@ class KafkaProducer:
         try:
             if isinstance(message, str):
                 message = message.encode("utf-8")
+            if self.producer is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Kafka producer is not initialized",
+                )
             await self.producer.send_and_wait(topic=topic, value=message)
             logger.info("Message was sent to topic '%s'", topic)
         except KafkaConnectionError as error:
@@ -96,16 +101,14 @@ class KafkaProducer:
                 detail=f"Failed to send message to Kafka, because of {str(exception)}",
             ) from exception
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         Stopping Kafka producer
-
         """
         try:
             if self.producer:
                 await self.producer.stop()
                 logger.info("Admin client Kafka producer instance was finished")
-            return self.producer()
         except KafkaError as error:
             logger.exception("Common base broker error - %s", error)
             raise HTTPException(
@@ -120,7 +123,7 @@ class KafkaProducer:
             ) from exception
 
 
-async def get_producer(request: Request):
+async def get_producer(request: Request) -> AIOKafkaProducer:
     """
     Dependency function to retrieve the Kafka producer from the FastAPI application state
 
@@ -137,5 +140,6 @@ async def get_producer(request: Request):
 
 
 kafka_producer = KafkaProducer(
-    bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}", topic="events"
+    bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}",
+    topic="events"
 )

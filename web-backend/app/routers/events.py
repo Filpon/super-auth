@@ -22,7 +22,7 @@ async def create_event(
     event: EventCreateSchema,
     user: dict[str, Any] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    producer=Depends(get_producer),
+    producer: Any = Depends(get_producer),
 ) -> EventCreateSchema | Any:
     """
     Event creation for authenticated user
@@ -39,7 +39,7 @@ async def create_event(
             detail="Event already exists in system",
         )
     event.client_info = user["azp"]
-    event_creation_result = await repository_events.create(obj=event)
+    event_creation_result = await repository_events.create(obj=event)  # type: ignore[arg-type]
     await producer.send_message(topic="events", message=f"{event.name} was created")
     logger.info("Event '%s' was created", event.name)
     return event_creation_result
