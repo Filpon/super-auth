@@ -1,6 +1,8 @@
 import os
-from typing import Any, Awaitable, Callable, Optional
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator, Awaitable, Callable, Optional
 
+from aiokafka.errors import TopicAlreadyExistsError
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,10 +28,41 @@ logger = configure_logging_handler()
 
 ORIGINS: Optional[str] = os.getenv("ORIGINS", "")
 
+
+@asynccontextmanager
+async def lifespan_handler(application: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Application start and shutdown handler
+
+    :param FastAPI application: Application instance
+
+    :yield AsyncGenerator: Asynchronous generator object
+    """
+    logger.info("Backend container was started")
+    async with cache_span(application):
+        async with engine.begin() as connector:
+            await connector.run_sync(Base.metadata.create_all)
+        logger.info("Database creation was finished")
+        await kafka_producer.start()
+        application.state.producer = kafka_producer
+        logger.info("Application client Kafka producer was started")
+        try:
+            await kafka_admin.create_topic(topic_name="events")
+            logger.info("Application client Kafka topic 'events' was created")
+        except TopicAlreadyExistsError:
+            logger.info("Application start continued with existing topic 'events")
+        yield
+        await application.state.producer.stop()
+        logger.info("Application client Kafka producer was finished")
+        logger.info("Backend container shutdown")
+
+
 # FastAPI app creation
-app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi")
-app.add_middleware(middleware_class=LoggingMiddleware)
-logger.info("TESTING=%s", os.getenv('TESTING'))
+app = FastAPI(
+    docs_url="/api/v1/docs", openapi_url="/api/v1/openapi", lifespan=lifespan_handler
+)
+
+logger.info("TESTING=%s", os.getenv("TESTING"))
 if os.getenv("TESTING", "") != "true":
     logger.info("Include SlowAPIASGIMiddleware")
     limiter = Limiter(key_func=get_remote_address, application_limits=["3/5seconds"])
@@ -55,55 +88,30 @@ async def handle_rate_limit_exceeded(
     return await rate_limit_exceeded_handler(_=request, __=exception_name)
 
 
-app.add_exception_handler(RateLimitExceeded, handle_rate_limit_exceeded)
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.add_exception_handler(
+    exc_class_or_status_code=RateLimitExceeded,
+    handler=handle_rate_limit_exceeded,  # type: ignore[arg-type]
+)
+app.include_router(router=auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(
-    events.router,
+    router=events.router,
     prefix="/api/v1/events",
     tags=["events"],
     dependencies=[Depends(verify_token)],
 )
-app.include_router(kafka.router, prefix="/api/v1/kafka", tags=["kafka"])
+app.include_router(router=kafka.router, prefix="/api/v1/kafka", tags=["kafka"])
 
 # Configure CORS
 origins = ORIGINS.split(sep=",") if ORIGINS else []
 logger.info("ORIGINS=%s", ORIGINS)
+app.add_middleware(middleware_class=LoggingMiddleware)
 app.add_middleware(
-    CORSMiddleware,
+    middleware_class=CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Database creation
-@app.on_event("startup")
-async def startup() -> None:
-    """
-    Starting database creation
-
-    """
-    async with cache_span(app):
-        async with engine.begin() as connector:
-            await connector.run_sync(Base.metadata.create_all)
-        logger.info("Database creation was finished")
-        await kafka_producer.start()
-        app.state.producer = kafka_producer
-        logger.info("Application client Kafka producer was started")
-        await kafka_admin.create_topic(
-            topic_name="events",
-        )
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """
-    Application shutdown
-
-    """
-    await app.state.producer.stop()
-    logger.info("Application client Kafka producer was finished")
 
 
 @app.get("/check")
@@ -118,7 +126,9 @@ async def root() -> Response:
 
 
 @app.get("/admin")  # Requires the admin role
-def call_admin(user: dict[str, Any] =  Depends(verify_permission(required_roles=["admin"]))) -> str:
+def call_admin(
+    user: dict[str, Any] = Depends(verify_permission(required_roles=["admin"])),
+) -> str:
     """
     Admin role obtaining
 
