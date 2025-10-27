@@ -86,7 +86,7 @@ services:
       POSTGRES_PASSWORD: ${BACKEND_POSTGRES_PASSWORD}
       POSTGRES_DB: ${BACKEND_POSTGRES_DB}
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     networks:
       - keycloak-network
     logging: *logging
@@ -161,7 +161,7 @@ services:
     networks:
       - keycloak-network
     volumes:
-      - ./keycloak_data:/var/lib/postgresql/data
+      - keycloak_data:/var/lib/postgresql/data
 
   keydb:
     image: eqalpha/keydb:latest
