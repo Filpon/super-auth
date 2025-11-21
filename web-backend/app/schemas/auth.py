@@ -6,6 +6,7 @@ class Token(BaseModel):
     Class representing token validation
 
     """
+
     token: str
 
 
@@ -14,6 +15,7 @@ class TokenResponseSchema(BaseModel):
     Validation and structure of Token Response model
 
     """
+
     access_token: str
     refresh_token: str
     expires_in: str
@@ -26,6 +28,7 @@ class TokenResponseCallbackSchema(BaseModel):
     Class representing token validation
 
     """
+
     access_token: str
     id_token: str
 
@@ -35,6 +38,7 @@ class UserUpdate(BaseModel):
     Class representing user update
 
     """
+
     new_password: str
 
 
@@ -44,5 +48,6 @@ class CustomOAuth2PasswordRequestForm(BaseModel):
     containing necessary fields for user credentials
 
     """
+
     username: str
     password: str

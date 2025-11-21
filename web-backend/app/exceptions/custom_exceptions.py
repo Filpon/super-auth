@@ -18,4 +18,6 @@ class InvalidCredentialsException(HTTPException):
         Initializes the InvalidCredentialsException with a 401 status code
         and a detail message indicating invalid credentials.
         """
-        super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )

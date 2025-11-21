@@ -1,11 +1,8 @@
 FROM python:3.12.7
 
 COPY --from=ghcr.io/astral-sh/uv:0.5.2 /uv /uvx /bin/
-
 WORKDIR /app
-
 COPY . /app
-
 
 RUN uv sync --frozen --no-cache
 

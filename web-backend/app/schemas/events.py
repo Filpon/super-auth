@@ -9,6 +9,7 @@ class EventBaseSchema(BaseModel):
     Events base validating
 
     """
+
     name: str
     date: date
     client_info: Optional[str] = None
@@ -26,6 +27,7 @@ class EventFetchSchema(EventBaseSchema):
     Events fetching validating
 
     """
+
     id: int
 
     class Config:  # pylint: disable=C0115,R0903
