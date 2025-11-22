@@ -2,9 +2,8 @@ import os
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Awaitable, Callable, Optional
 
-from aiokafka.errors import TopicAlreadyExistsError
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from slowapi import Limiter
@@ -49,8 +48,14 @@ async def lifespan_handler(application: FastAPI) -> AsyncGenerator[None, None]:
         try:
             await kafka_admin.create_topic(topic_name="events")
             logger.info("Application client Kafka topic 'events' was created")
-        except TopicAlreadyExistsError:
-            logger.info("Application start continued with existing topic 'events")
+        except HTTPException as excp:
+            if excp.status_code == status.HTTP_409_CONFLICT:
+                logger.info("Application start continued with existing topic 'events")
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to start broker, because {str(excp)}",
+                ) from excp
         yield
         await application.state.producer.stop()
         logger.info("Application client Kafka producer was finished")
