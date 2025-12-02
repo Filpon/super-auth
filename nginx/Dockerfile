@@ -1,4 +1,4 @@
-FROM nginx:1.28.0
+FROM nginx:1.29.2
 
 COPY ./import-envs.sh  /import-envs.sh
 COPY ./nginx.conf /etc/nginx/nginx.conf
