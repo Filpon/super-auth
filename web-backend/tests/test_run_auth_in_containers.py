@@ -33,10 +33,11 @@ async def test_generate_auth(backend_container_runner):
     :param backend_container_runner: Fixture that provides way to
     run the backend container and interact with it during tests
     """
-    response = await backend_container_runner.get(
-        url="/api/v1/auth/generate-auth"
-    )
-    assert response.status_code in {status.HTTP_200_OK, status.HTTP_307_TEMPORARY_REDIRECT}
+    response = await backend_container_runner.get(url="/api/v1/auth/generate-auth")
+    assert response.status_code in {
+        status.HTTP_200_OK,
+        status.HTTP_307_TEMPORARY_REDIRECT,
+    }
 
 
 @pytest.mark.anyio
@@ -54,7 +55,10 @@ async def test_auth_generate_calback(backend_container_runner):
     response = await backend_container_runner.get(
         url="/api/v1/auth/callback?code=auth_code"
     )
-    assert response.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED}
+    assert response.status_code in {
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_401_UNAUTHORIZED,
+    }
 
 
 @pytest.mark.anyio
@@ -209,7 +213,7 @@ async def test_fetch_all_users(backend_container_runner, admin_user_tokens):
     """
     response = await backend_container_runner.get(
         url="/api/v1/auth/users",
-        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"}
+        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -234,11 +238,14 @@ async def test_update_user_account(backend_container_runner, admin_user_tokens):
         url="/api/v1/auth/register",
         data={"username": username, "password": password},
     )
-    assert response_register.status_code in {status.HTTP_200_OK, status.HTTP_201_CREATED}
+    assert response_register.status_code in {
+        status.HTTP_200_OK,
+        status.HTTP_201_CREATED,
+    }
 
     response_fetch_users = await backend_container_runner.get(
         url="/api/v1/auth/users",
-        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"}
+        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
     user_sub_id = ""
@@ -279,11 +286,14 @@ async def test_delete_user_account(backend_container_runner, admin_user_tokens):
         url="/api/v1/auth/register",
         data={"username": username, "password": password},
     )
-    assert response_register.status_code in {status.HTTP_200_OK, status.HTTP_201_CREATED}
+    assert response_register.status_code in {
+        status.HTTP_200_OK,
+        status.HTTP_201_CREATED,
+    }
 
     response_fetch_users = await backend_container_runner.get(
         url="/api/v1/auth/users",
-        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"}
+        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
     user_sub_id = ""
@@ -293,13 +303,13 @@ async def test_delete_user_account(backend_container_runner, admin_user_tokens):
             break
     response_exclude_user = await backend_container_runner.delete(
         url=f"/api/v1/auth/users/{user_sub_id}",
-        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"}
+        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response_exclude_user.status_code == status.HTTP_200_OK
 
     response_fetch_users = await backend_container_runner.get(
         url="/api/v1/auth/users",
-        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"}
+        headers={"Authorization": f"Bearer {admin_user_tokens['access_token']}"},
     )
     assert response_fetch_users.status_code == status.HTTP_200_OK
 
@@ -309,7 +319,9 @@ async def test_delete_user_account(backend_container_runner, admin_user_tokens):
 
 
 @pytest.mark.anyio
-async def test_common_user_protected_route(backend_container_runner, common_user_tokens):
+async def test_common_user_protected_route(
+    backend_container_runner, common_user_tokens
+):
     """
     Testing the protected route for common users.
 
@@ -355,7 +367,9 @@ async def test_admin_user_protected_route(backend_container_runner, admin_user_t
 
 
 @pytest.mark.anyio
-async def test_common_user_introspect_token(backend_container_runner, common_user_tokens):
+async def test_common_user_introspect_token(
+    backend_container_runner, common_user_tokens
+):
     """
     Testing the token introspection endpoint.
 
