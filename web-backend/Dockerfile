@@ -1,4 +1,4 @@
-FROM python:3.12.9
+FROM python:3.12.9-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.5.2 /uv /uvx /bin/
 WORKDIR /app
