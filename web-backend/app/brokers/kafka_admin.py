@@ -149,7 +149,7 @@ class KafkaAdmin:
             logger.info("Topic '%s' was created successfully", topic_name)
             return {"message": f"Topic '{topic_name}' was created successfully"}
         except TopicAlreadyExistsError as error:
-            logger.exception("Topic '%s' already exists", topic_name)
+            logger.info("Topic '%s' already exists", topic_name)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Topic '{topic_name}' already exists",
