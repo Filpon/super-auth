@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
-import React, { useState } from 'react';
-import { Form, Card, Container, Button } from 'react-bootstrap';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Card, Container, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -42,19 +42,41 @@ export const Register = () => {
   // Regular expression allows only alphanumeric characters and underscores for username
   const usernameRegex = /^[a-zA-Z0-9_]+$/;
   // Regular expression for password (at least 6 characters, can include letters, numbers, and special characters)
-  const passwordRegex = /^[a-zA-Z0-9!@#$%^&*()_+={}$$$$:;"'<>,.?~`-]{6,}$/;
+  const passwordRegex = /^[a-zA-Z0-9!@#$%^&*()_+={}\[\];:"'<>,.?~`-]{6,}$/;
+
+  // Username validation
+  const usernameTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      if (usernameTimerRef.current) {
+        clearTimeout(usernameTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputUsername = e.target.value;
     setUsername(inputUsername);
-    // Validate username
-    if (usernameRegex.test(inputUsername)) {
-      setUsernameError('');
-    } else {
-      setUsernameError(
-        'Username\n- should not be empty;\n- contains latin letters, numbers, and underscores',
-      );
+
+    if (usernameTimerRef.current) {
+      clearTimeout(usernameTimerRef.current);
     }
+    usernameTimerRef.current = window.setTimeout(() => {
+      const trimmed = inputUsername.trim();
+      if (trimmed === '') {
+        setUsernameError('Username should not be empty');
+        return;
+      }
+      if (trimmed.length < 3) {
+        setUsernameError('Username should be at least 3 characters long');
+        return;
+      }
+      if (!usernameRegex.test(trimmed)) {
+        setUsernameError('Username should contain latin letters, numbers, and underscores');
+        return;
+      }
+      setUsernameError('');
+    }, 1500);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +168,8 @@ export const Register = () => {
   };
 
   const isFormValid =
-    usernameRegex.test(username) && passwordRegex.test(password);
+    usernameRegex.test(username.trim()) && passwordRegex.test(password) && confirmPassword === password && !usernameError &&
+    !passwordError && !confirmPasswordError;
 
   return (
     <Container className="login-container">
