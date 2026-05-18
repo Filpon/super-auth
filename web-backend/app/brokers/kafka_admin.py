@@ -38,18 +38,19 @@ class KafkaAdmin:
         :param str bootstrap_servers: Kafka connecting servers
         """
         self.bootstrap_servers = bootstrap_servers
-        self.admin_client: Optional[AIOKafkaAdminClient] = AIOKafkaAdminClient(
-            bootstrap_servers=self.bootstrap_servers
-        )
+        self.admin_client: Optional[AIOKafkaAdminClient] = None
 
     async def start(self) -> None:
         """
         Start active Kafka admin client instance
         """
         try:
-            if self.admin_client:
-                await self.admin_client.start()
-                logger.info("Admin client Kafka instance was started")
+            if self.admin_client is None:
+                self.admin_client = AIOKafkaAdminClient(
+                    bootstrap_servers=self.bootstrap_servers
+                )
+            await self.admin_client.start()
+            logger.info("Admin client Kafka instance was started")
         except KafkaTimeoutError as error:
             logger.exception("Timeout Kafka connection error")
             raise HTTPException(

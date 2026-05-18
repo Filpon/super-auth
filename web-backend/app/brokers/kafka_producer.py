@@ -37,9 +37,7 @@ class KafkaProducer:
         """
         self.bootstrap_servers = bootstrap_servers
         self.topic = topic
-        self.producer: Optional[AIOKafkaProducer] = AIOKafkaProducer(
-            bootstrap_servers=self.bootstrap_servers,
-        )
+        self.producer: Optional[AIOKafkaProducer] = None
 
     async def start(self) -> AIOKafkaProducer:
         """
@@ -48,9 +46,12 @@ class KafkaProducer:
         :returns AIOKafkaProducer: The AIOKafkaProducer instance
         """
         try:
-            if self.producer:
-                await self.producer.start()
-                logger.info("Admin client Kafka producer instance was started")
+            if self.producer is None:
+                self.producer = AIOKafkaProducer(
+                    bootstrap_servers=self.bootstrap_servers,
+                )
+            await self.producer.start()
+            logger.info("Admin client Kafka producer instance was started")
             return self.producer
         except KafkaTimeoutError as error:
             logger.exception("Timeout Kafka connection error")
