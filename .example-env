@@ -27,7 +27,8 @@ KEYCLOAK_HOSTNAME=  # Project Keycloak hostname, e.g. example
 KEYCLOAK_PORT=9000  # Connection port for keycloak container
 KC_REALM_COMMON_CLIENT=  # Keycloak created realm, often master 
 KC_REALM_COMMON_USER=  # Keycloak custom user name
-KC_REALM_COMMON_USER_PASSWORD=  # Keycloak custom password value 
+KC_REALM_COMMON_USER_PASSWORD=  # Keycloak custom password value
+KC_REALM_ACCESS_TOKEN_EXPIRES_IN=  # Keycloak access token expires in value
 
 # PROMETHEUS
 PROMETHEUS_VERSION=  # Project Prometheus version

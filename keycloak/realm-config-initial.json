@@ -1,5 +1,6 @@
 {
   "realm": "master",
+  "accessTokenLifespan": "${KC_REALM_ACCESS_TOKEN_EXPIRES_IN}",
   "enabled": true,
   "displayName": "master",
   "displayNameHtml": "master",
