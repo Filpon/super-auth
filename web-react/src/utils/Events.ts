@@ -2,10 +2,11 @@
 import { AxiosResponse } from 'axios';
 
 import { apiRequest } from './AxiosRequest.ts';
+import Cookies from 'js-cookie';
 
 export const createEvent = async (name: string, date: string) => {
-  const accessToken: string | null = localStorage.getItem('access_token');
-  const refreshToken = localStorage.getItem('refresh_token');
+  const accessToken: string | undefined = Cookies.get('access_token');
+  const refreshToken: string | undefined = Cookies.get('refresh_token');
 
   if (accessToken && refreshToken) {
     const response: AxiosResponse = await apiRequest.post(
@@ -31,8 +32,8 @@ export const createEvent = async (name: string, date: string) => {
 };
 
 export const fetchEvents = async () => {
-  const accessToken: string | null = localStorage.getItem('access_token');
-  const refreshToken = localStorage.getItem('refresh_token');
+  const accessToken: string | null = Cookies.get('access_token');
+  const refreshToken = Cookies.get('refresh_token');
 
   if (accessToken && refreshToken) {
     const response: AxiosResponse = await apiRequest.get('/api/v1/events', {

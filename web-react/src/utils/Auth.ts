@@ -1,7 +1,10 @@
 import { createContext } from 'react';
 
 import { apiRequest } from './AxiosRequest.ts';
-import { checkRefreshToken, checkAccessToken, clearTokens } from './Tokens.ts';
+import { checkTokens, checkAccessToken, clearTokens } from './Tokens.ts';
+
+import Cookies from 'js-cookie';
+
 
 export const AuthContext = createContext({
   authenticated: false,
@@ -9,19 +12,57 @@ export const AuthContext = createContext({
   setAuthentication: (auth: boolean) => {},
 });
 
-export const isAuthenticated = () => {
-  return localStorage.getItem('access_token') !== null;
+type IntrospectResponse = {
+  active?: boolean;
 };
 
-export const peridodicRefreshAuthCheck = (seconds = 120) => {
-  const interval = setInterval(() => {
-    if (isAuthenticated()) checkRefreshToken();
+export const isAuthenticated = async (): Promise<boolean> => {
+  const accessToken = Cookies.get('access_token');
+
+  if (!accessToken) {
+    return false;
+  }
+
+  try {
+    const response = await apiRequest.post<IntrospectResponse>(
+      '/api/v1/auth/introspect',
+      { token: accessToken },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const isReturnedAccessTokenActive = response.data?.active;
+
+    if (!isReturnedAccessTokenActive) {
+      console.error('Token is not active');
+      await logout();
+      window.location.href = "/"; 
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Token introspection failed:', error);
+    await logout();
+    window.location.href = "/"; 
+    return false;
+  }
+};
+
+export const periodicRefreshAuthCheck = (seconds = 60) => {
+  const interval = setInterval(async () => {
+    const isAuthenticatedResult = await isAuthenticated();
+    if (isAuthenticatedResult) await checkTokens();
   }, seconds * 1000);
   return () => clearInterval(interval);
 };
 
 export const logout = async () => {
-  const refreshToken = localStorage.getItem('refresh_token');
+  const refreshToken = Cookies.get('refresh_token');
   await apiRequest.post(
     '/api/v1/auth/logout',
     JSON.stringify({ token: refreshToken }),
@@ -39,9 +80,9 @@ export const authorized_fetch = async (
   headers: any,
   options: any,
 ) => {
-  if (isAuthenticated()) {
+  if (await isAuthenticated()) {
     await checkAccessToken();
-    const token = localStorage.getItem('access_token');
+    const token = Cookies.get('access_token');
     headers['Authorization'] = 'Bearer ' + token;
   }
 

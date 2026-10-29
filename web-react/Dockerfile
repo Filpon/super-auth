@@ -1,4 +1,4 @@
-FROM node:22.11.0
+FROM node:24.21.0
 WORKDIR /usr/src/app
 COPY package.json ./
 RUN yarn install
