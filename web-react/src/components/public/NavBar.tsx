@@ -20,7 +20,7 @@ export const NavBar: FC = () => {
   const clickLogout = () => {
     logout().finally(() => {
       setAuthentication(false);
-      navigate('/');
+      navigate('/login');
     });
   };
 
