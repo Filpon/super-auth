@@ -1,8 +1,10 @@
-import { FC, useEffect, useState } from 'react';
-import { Container, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import { isAuthenticated } from '../../utils/Auth.ts';
 import './styles/HomePage.scss';
+
+import { FC, useEffect, useState } from 'react';
+import { Button, Container } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+
+import { isAuthenticated } from '../../utils/Auth.ts';
 
 export const Home: FC = () => {
   const [authenticated, setAuthenticated] = useState(false);
@@ -31,9 +33,7 @@ export const Home: FC = () => {
 
   if (!checked) {
     return (
-      <Container className="home-page-container">
-        Authorization check
-      </Container>
+      <Container className="home-page-container">Authorization check</Container>
     );
   }
 

@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
 import './styles/Snowflakes.scss';
+
+import React, { useEffect } from 'react';
 
 /**
  * Functional component that represents flakes animation

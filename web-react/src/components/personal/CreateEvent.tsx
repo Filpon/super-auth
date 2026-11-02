@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import './styles/Events.scss';
+
 import { AxiosError } from 'axios';
-import { Form, Container, Button } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Button, Container, Form } from 'react-bootstrap';
 
 import { createEvent } from '../../utils/Events.ts';
-import './styles/Events.scss';
 
 /**
  * Functional component that creates event.

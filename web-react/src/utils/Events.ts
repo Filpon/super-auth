@@ -1,8 +1,9 @@
 // eslint-disable-next-line
 import { AxiosResponse } from 'axios';
 
-import { apiRequest } from './AxiosRequest.ts';
 import Cookies from 'js-cookie';
+
+import { apiRequest } from './AxiosRequest.ts';
 
 export const createEvent = async (name: string, date: string) => {
   const accessToken: string | undefined = Cookies.get('access_token');

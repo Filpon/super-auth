@@ -1,12 +1,12 @@
 import './App.css';
+
 import React, { FC, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
-import { Home, NavBar, Login, Register } from './components/public/index.ts';
-import { PersonalRoute } from './components/personal/PersonalRoute.tsx';
 import { CreateEvent } from './components/personal/CreateEvent.tsx';
 import { FetchEvents } from './components/personal/FetchEvents.tsx';
-
+import { PersonalRoute } from './components/personal/PersonalRoute.tsx';
+import { Home, Login, NavBar, Register } from './components/public/index.ts';
 import {
   AuthContext,
   isAuthenticated,

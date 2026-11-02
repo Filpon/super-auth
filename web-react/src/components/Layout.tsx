@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
 import Container from '@mui/material/Container';
+import React, { ReactNode } from 'react';
 
 import NavBar from './public/NavBar.tsx';
 

@@ -1,10 +1,9 @@
 // src/FetchEvents.tsx
-import React, { useEffect, useState } from 'react';
 import moment from 'moment';
-import { Table, Container, InputGroup, FormControl } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Container, FormControl, InputGroup, Table } from 'react-bootstrap';
 
 import { fetchEvents } from '../../utils/Events.ts';
-
 import { Event } from './index.ts';
 
 /**
