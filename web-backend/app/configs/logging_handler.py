@@ -1,62 +1,105 @@
-from logging import INFO, Formatter, Logger, StreamHandler, getLogger
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-from typing import Final
+import json
+from contextvars import ContextVar
+from datetime import UTC, datetime
+from logging import Filter, Formatter, LogRecord, StreamHandler, config, makeLogRecord
+from typing import Any
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure logging
-LOG_LEVEL: Final[int] = INFO
-LOG_FILE: Final[Path] = Path(__file__).resolve().parent.parent / "logs" / "logfile.log"
-MAX_BYTES: Final[int] = (
-    5 * 1024 * 1024
-)  # Maximum file size in bytes before rotation - currently 5 MB
-BACKUP_COUNT: Final[int] = 3  # Backup files number
+request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 
 
-def configure_logging_handler(
-    log_file: Path = LOG_FILE,
-    level: int = LOG_LEVEL,
-    max_bytes: int = MAX_BYTES,
-    backup_count: int = BACKUP_COUNT,
-) -> Logger:
+class RequestContextFilter(Filter):
+    """
+    Include the current request ID to each log record
+
+    :param record LogRecord: The log record
+    :return bool: Whether the record should be processed
+    """
+
+    def filter(self, record: LogRecord) -> bool:
+        """
+        Provide request ID to the log record
+
+        :param record LogRecord: The log record
+        :return bool: Whether the record should be carry out
+        """
+        record.request_id = request_id_var.get()
+        return True
+
+
+class JsonFormatter(Formatter):
+    """
+    Format log records as JSON strings
+
+    """
+
+    def format(self, record: LogRecord) -> str:
+        """
+        Convert a log record to JSON string
+
+        :param record LogRecord: The log record
+        :return str: JSON string containing the log record fields
+        """
+        payload: dict[str, Any] = {
+            "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "request_id": getattr(record, "request_id", "-"),
+        }
+
+        # logger.info("...", extra={...}) except some reserved fields
+        standard_fields = set(makeLogRecord({}).__dict__)
+        for key, value in record.__dict__.items():
+            if (
+                key not in standard_fields
+                and key not in payload
+                and not key.startswith("_")
+            ):
+                payload[key] = value
+
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(payload, ensure_ascii=False, default=str)
+
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_context": {"()": RequestContextFilter},
+    },
+    "formatters": {
+        "json": {"()": JsonFormatter},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "json",
+            "filters": ["request_context"],
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["console"],
+    },
+    "loggers": {
+        # JSON-format for Uvicorn root handler
+        "uvicorn": {"handlers": [], "propagate": True},
+        "uvicorn.error": {"handlers": [], "propagate": True},
+        "uvicorn.access": {"handlers": [], "propagate": True},
+    },
+}
+
+
+def configure_logging_handler() -> None:
     """
     Logger creation or obtaining with file handler rotation
 
-    :param str log_file: The file to which logs will be written
-    :param int level: Logging level
-    :param int max_bytes: The maximum file size in bytes before rotation
-    :param int backup_count: The number of backup files to keep
-    :return Logger logger: Configured logger instance
     """
-    # The creation of the logs directory if it does not exist
-    log_dir = log_file.parent
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    # Creation or get the logger
-    logger = getLogger(__name__)
-    logger.setLevel(level)
-
-    # Multiple handlers prevention if the logger is configured multiple times
-    if not logger.handlers:
-        # Log format
-        formatter = Formatter(
-            fmt="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
-        )
-        # File handler
-        file_handler = RotatingFileHandler(
-            filename=log_file, maxBytes=max_bytes, backupCount=backup_count
-        )
-        file_handler.setLevel(level)
-        file_handler.setFormatter(formatter)
-        # Console handler
-        console_handler = StreamHandler()
-        console_handler.setLevel(level)
-        console_handler.setFormatter(formatter)
-
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
-
-    return logger
+    config.dictConfig(LOGGING_CONFIG)

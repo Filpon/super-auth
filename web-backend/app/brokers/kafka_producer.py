@@ -1,4 +1,5 @@
 import os
+from logging import getLogger
 from typing import Final, Optional
 
 from aiokafka import AIOKafkaProducer
@@ -10,9 +11,7 @@ from aiokafka.errors import (
 from dotenv import load_dotenv
 from fastapi import HTTPException, Request, status
 
-from app.configs.logging_handler import configure_logging_handler
-
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 load_dotenv()
 

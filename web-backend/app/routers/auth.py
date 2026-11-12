@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
@@ -29,7 +31,7 @@ from app.services.keycloak import (
     verify_token,
 )
 
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 router = APIRouter()
 

@@ -1,3 +1,4 @@
+import logging
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -5,6 +6,8 @@ from slowapi.errors import RateLimitExceeded
 from app.configs.logging_handler import configure_logging_handler
 
 logger = configure_logging_handler()
+
+logger = logging.getLogger(__name__)
 
 
 # Custom exception handler to avoid allowed requests number printing

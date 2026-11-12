@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from logging import getLogger
 from typing import Any, AsyncGenerator, Awaitable, Callable, Optional
 
 from dotenv import load_dotenv
@@ -14,7 +15,6 @@ from slowapi.util import get_remote_address
 from app.brokers.kafka_admin import kafka_admin
 from app.brokers.kafka_producer import kafka_producer
 from app.caches.keydb import cache_span
-from app.configs.logging_handler import configure_logging_handler
 from app.database.db import engine
 from app.database.models import Base
 from app.middlewares.logging_middleware import LoggingMiddleware
@@ -23,7 +23,7 @@ from app.services.keycloak import verify_permission, verify_token
 from app.utils.handlers import rate_limit_exceeded_handler
 
 load_dotenv()  # Environmental variables
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 ORIGINS: Optional[str] = os.getenv("ORIGINS", "")
 

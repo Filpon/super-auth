@@ -36,6 +36,17 @@ services:
     networks:
       - keycloak-network
 
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.52.0
+    command:
+      - -storageDataPath=/victoria-logs-data
+      - -splunk.msgField=event.line.message,event.line
+      - -splunk.streamFields=event.line.service,event.line.enveronment,event.tag
+    volumes:
+      - victoria-logs-data:/vlogs
+    ports:
+      - "9428:9428"
+
   backend:
     build: ./web-backend
     ports:
@@ -71,6 +82,13 @@ services:
       - kafka
     networks:
       - keycloak-network
+    logging:
+      driver: splunk
+      options:
+        splunk-url: http://127.0.0.1:9428
+        splunk-token: any-token
+        splunk-format: json
+        splunk-verify-connection: "false"
 
   backend-db:
     image: postgres:${POSTGRES_VERSION}
@@ -271,6 +289,7 @@ services:
 volumes:
   db_data:
   keycloak_data:
+  victoria-logs-data:
 
 networks:
   keycloak-network:

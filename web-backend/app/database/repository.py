@@ -1,12 +1,12 @@
+from logging import getLogger
 from typing import Any, Generic, Sequence, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.configs.logging_handler import configure_logging_handler
 from app.database.models import Base
 
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 ModelType = TypeVar("ModelType", bound=Base)  # pylint: disable=C0103
 
