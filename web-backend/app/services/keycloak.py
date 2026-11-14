@@ -1,4 +1,5 @@
 import os
+from logging import getLogger
 from typing import Any, Awaitable, Callable
 
 from dotenv import load_dotenv
@@ -22,7 +23,7 @@ from app.schemas.auth import TokenResponseCallbackSchema, TokenResponseSchema
 
 load_dotenv()
 
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 REALM = "master"
 

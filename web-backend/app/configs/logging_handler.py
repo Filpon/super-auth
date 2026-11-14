@@ -10,6 +10,8 @@ load_dotenv()
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 
+SERVICE_NAME = "web-backend"
+
 
 class RequestContextFilter(Filter):
     """
@@ -44,6 +46,7 @@ class JsonFormatter(Formatter):
         :return str: JSON string containing the log record fields
         """
         payload: dict[str, Any] = {
+            "service": SERVICE_NAME,
             "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,

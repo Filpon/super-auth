@@ -1,12 +1,10 @@
 from logging import getLogger
-
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi_cache.decorator import cache
 
-from app.configs.logging_handler import configure_logging_handler
 from app.schemas.auth import (
     CustomOAuth2PasswordRequestForm,
     Token,

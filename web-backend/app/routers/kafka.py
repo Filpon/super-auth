@@ -1,4 +1,5 @@
 import os
+from logging import getLogger
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -6,10 +7,9 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.brokers.kafka_admin import kafka_admin
 from app.brokers.kafka_producer import kafka_producer
-from app.configs.logging_handler import configure_logging_handler
 from app.schemas.kafka import CreateTopicRequest, SendingKafkaMessage
 
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 load_dotenv()
 

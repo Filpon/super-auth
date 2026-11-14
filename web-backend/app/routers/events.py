@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Any, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -5,14 +6,13 @@ from fastapi_cache.decorator import cache
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.brokers.kafka_producer import get_producer
-from app.configs.logging_handler import configure_logging_handler
 from app.database.db import get_db
 from app.database.models import Event
 from app.database.repository import ModelRepository, ModelType
 from app.routers.auth import get_current_user
 from app.schemas.events import EventCreateSchema, EventFetchSchema
 
-logger = configure_logging_handler()
+logger = getLogger(__name__)
 
 router = APIRouter()
 
